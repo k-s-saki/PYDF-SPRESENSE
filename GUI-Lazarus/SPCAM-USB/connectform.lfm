@@ -1,0 +1,62 @@
+object FrmConnect: TFrmConnect
+  Left = 701
+  Height = 199
+  Top = 363
+  Width = 380
+  Caption = 'Connect spresense...'
+  ClientHeight = 199
+  ClientWidth = 380
+  LCLVersion = '2.0.4.0'
+  object Button1: TButton
+    Left = 280
+    Height = 25
+    Top = 112
+    Width = 75
+    Caption = 'Ok'
+    ModalResult = 1
+    TabOrder = 0
+  end
+  object Button2: TButton
+    Left = 280
+    Height = 25
+    Top = 148
+    Width = 75
+    Caption = 'Cancel'
+    ModalResult = 2
+    TabOrder = 1
+  end
+  object EdtPort: TEdit
+    Left = 96
+    Height = 23
+    Top = 24
+    Width = 160
+    TabOrder = 2
+    Text = 'COM5'
+  end
+  object Label1: TLabel
+    Left = 56
+    Height = 15
+    Top = 26
+    Width = 22
+    Alignment = taRightJustify
+    Caption = 'Port'
+    ParentColor = False
+  end
+  object Label2: TLabel
+    Left = 29
+    Height = 15
+    Top = 66
+    Width = 50
+    Alignment = taRightJustify
+    Caption = 'BaudRate'
+    ParentColor = False
+  end
+  object EdtBaudRate: TEdit
+    Left = 96
+    Height = 23
+    Top = 64
+    Width = 160
+    TabOrder = 3
+    Text = '2000000'
+  end
+end

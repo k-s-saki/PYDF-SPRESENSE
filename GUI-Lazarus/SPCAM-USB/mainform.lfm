@@ -1,0 +1,219 @@
+object FrmMain: TFrmMain
+  Left = 354
+  Height = 738
+  Top = 126
+  Width = 931
+  Caption = 'Spresense USB Camera'
+  ClientHeight = 718
+  ClientWidth = 931
+  DoubleBuffered = True
+  Menu = MainMenu1
+  OnCreate = FormCreate
+  OnDestroy = FormDestroy
+  ParentDoubleBuffered = False
+  Position = poScreenCenter
+  LCLVersion = '2.0.4.0'
+  object ImagePaint: TPaintBox
+    Left = 0
+    Height = 192
+    Top = 0
+    Width = 224
+    OnPaint = ImagePaint_Paint
+  end
+  object ImageSplit: TSplitter
+    Cursor = crVSplit
+    Left = 0
+    Height = 10
+    Top = 476
+    Width = 931
+    Align = alBottom
+    ResizeAnchor = akBottom
+  end
+  object PnlBottom: TPanel
+    Left = 0
+    Height = 232
+    Top = 486
+    Width = 931
+    Align = alBottom
+    Caption = 'PnlBottom'
+    ClientHeight = 232
+    ClientWidth = 931
+    TabOrder = 1
+    object PnlMemo: TPanel
+      Left = 1
+      Height = 196
+      Top = 35
+      Width = 929
+      Align = alClient
+      Caption = 'PnlMemo'
+      ClientHeight = 196
+      ClientWidth = 929
+      TabOrder = 0
+      object DebugMemo: TMemo
+        Left = 1
+        Height = 194
+        Top = 1
+        Width = 408
+        Align = alLeft
+        Lines.Strings = (
+          'Console Window'
+        )
+        ScrollBars = ssAutoBoth
+        TabOrder = 0
+        WordWrap = False
+      end
+      object SpreMemo: TMemo
+        Left = 512
+        Height = 90
+        Top = 80
+        Width = 150
+        Lines.Strings = (
+          'SpreMemo'
+        )
+        ScrollBars = ssAutoBoth
+        TabOrder = 1
+        WordWrap = False
+      end
+      object MemoSplit: TSplitter
+        Left = 409
+        Height = 194
+        Top = 1
+        Width = 10
+      end
+    end
+    object PnlOperation: TPanel
+      Left = 1
+      Height = 34
+      Top = 1
+      Width = 929
+      Align = alTop
+      BevelOuter = bvSpace
+      ClientHeight = 34
+      ClientWidth = 929
+      Color = clSkyBlue
+      ParentColor = False
+      TabOrder = 1
+      object BtnConnect: TButton
+        Left = 8
+        Height = 25
+        Top = 8
+        Width = 75
+        Caption = 'Connect'
+        OnClick = BtnConnect_Click
+        TabOrder = 0
+      end
+      object rbGray: TRadioButton
+        Left = 192
+        Height = 19
+        Top = 10
+        Width = 44
+        Caption = 'Gray'
+        Checked = True
+        TabOrder = 4
+        TabStop = True
+      end
+      object rbColor: TRadioButton
+        Left = 256
+        Height = 19
+        Top = 10
+        Width = 48
+        Caption = 'Color'
+        TabOrder = 1
+      end
+      object BtnS: TButton
+        Left = 312
+        Height = 25
+        Top = 8
+        Width = 75
+        Caption = 'Start'
+        OnClick = BtnS_Click
+        TabOrder = 2
+      end
+      object BtnE: TButton
+        Left = 392
+        Height = 25
+        Top = 8
+        Width = 75
+        Caption = 'End'
+        OnClick = BtnE_Click
+        TabOrder = 3
+      end
+      object LblFPS: TLabel
+        Left = 489
+        Height = 15
+        Top = 14
+        Width = 37
+        Caption = '0.0 FPS'
+        ParentColor = False
+      end
+      object BtnShot: TButton
+        Left = 589
+        Height = 25
+        Top = 8
+        Width = 75
+        Caption = 'Shot'
+        OnClick = BtnShot_Click
+        TabOrder = 5
+      end
+    end
+  end
+  object MainMenu1: TMainMenu
+    left = 24
+    top = 360
+    object MenuItemFile: TMenuItem
+      Caption = '&File'
+      object MenuItem1: TMenuItem
+        Caption = '&Open'
+        ShortCut = 16463
+      end
+      object MenuItemSave: TMenuItem
+        Caption = '&Save'
+        ShortCut = 16467
+      end
+      object MenuItem3: TMenuItem
+        Caption = '-'
+      end
+      object MenuItem4: TMenuItem
+        Caption = 'E&xit'
+        ShortCut = 32883
+        OnClick = MenuItem4Click
+      end
+    end
+    object MenuItemEdit: TMenuItem
+      Caption = '&Edit'
+      object MenuItemCopy: TMenuItem
+        Caption = '&Copy'
+        ShortCut = 16451
+      end
+      object MenuItemPaste: TMenuItem
+        Caption = '&Paste'
+        ShortCut = 16470
+      end
+      object MenuItem37: TMenuItem
+        Caption = '-'
+      end
+    end
+  end
+  object OpenDialog1: TOpenDialog
+    Title = 'Open existing file'
+    DefaultExt = '.jpg'
+    Filter = 'JPEG Files (*.jpg, *jpeg)|*.jpg;*.jpeg|All Files (*.*)|*.*'
+    Options = [ofFileMustExist, ofEnableSizing, ofViewDetail]
+    left = 168
+    top = 360
+  end
+  object SaveDialog1: TSaveDialog
+    Title = 'Save file as'
+    DefaultExt = '.jpg'
+    Filter = 'JPEG Files (*.jpg, *jpeg)|*.jpg;*.jpeg|All Files (*.*)|*.*'
+    Options = [ofOverwritePrompt, ofEnableSizing, ofViewDetail]
+    left = 240
+    top = 360
+  end
+  object Timer1: TTimer
+    Interval = 50
+    OnTimer = Timer1Timer
+    left = 182
+    top = 61
+  end
+end
