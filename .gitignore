@@ -1,0 +1,11 @@
+
+*.obj
+GUI-Lazarus/SPCAM-USB/lib/x86_64-win64/connectform.lfm
+GUI-Lazarus/SPCAM-USB/lib/x86_64-win64/mainform.lfm
+GUI-Lazarus/SPCAM-USB/lib/x86_64-win64/SPCAM_USB.res
+*.zip
+GUI-Lazarus/SPCAM2/lib/x86_64-win64/connectform.lfm
+GUI-Lazarus/SPCAM2/lib/x86_64-win64/mainform.lfm
+GUI-Lazarus/SPCAM2/lib/x86_64-win64/SPCAM2.res
+GUI-Lazarus/SPCAM2/lib/x86_64-win64/SPCAM_USB.res
+GUI-Lazarus/SPCAM2/lib/x86_64-win64/SPCAM_USB2.res
