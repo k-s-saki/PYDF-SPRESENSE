@@ -1,7 +1,7 @@
 object FrmMain: TFrmMain
-  Left = 406
+  Left = 354
   Height = 665
-  Top = 23
+  Top = 143
   Width = 909
   Caption = 'Spresense USB Camera Utility for DNNRT ( PyData.Fukui )'
   ClientHeight = 645

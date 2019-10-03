@@ -142,7 +142,7 @@ begin
 
   FConnect := false;
   FPrevEndDetect:=false;
-  s:= MyDocDir+ '\'+ ExtractFileName(ChangeFileExt(ParamStr(0),'.ini'));
+  s:= MyDocDir+ ExtractFileName(ChangeFileExt(ParamStr(0),'.ini'));
   FIni := TINIFile.Create(s);
 end;
 
