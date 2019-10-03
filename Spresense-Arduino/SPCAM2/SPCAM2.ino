@@ -399,10 +399,10 @@ void loop() {
     return;
 
   loopCounter++;
-  if (loopCounter / 100 == 0){  
+  if (loopCounter / 1000 <= 1){  
     digitalWrite(LED_LOOP, HIGH);
   }
-  if (loopCounter > 200){
+  if (loopCounter > 10000){
     loopCounter=0;
   }  
   if (checkSerialCommand()==0)

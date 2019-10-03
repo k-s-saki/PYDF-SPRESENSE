@@ -5,7 +5,7 @@
 #define MyAppVersion "20191002"
 #define MyAppPublisher "SAKIWAI Inc"
 #define MyAppURL "http://www.sakiwai.net"
-#define MyAppExeName "SPCAM_USB2.exe"
+#define MyAppExeName "SPCAM2.exe"
 
 [Setup]
 ; NOTE: The value of AppId uniquely identifies this application.

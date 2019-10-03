@@ -2,6 +2,7 @@
 
 USBを通して、Spresenseのカメラ機能をコントロールします。
 
+本プログラムを利用する時は、Spresense側で SPCAM2.inoを動作させておいてください。
 
 ソースコード
 2019/10/02　FreePascal3.0.4/Lazarus2.0.4で作成
