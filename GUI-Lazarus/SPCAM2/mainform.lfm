@@ -3,7 +3,7 @@ object FrmMain: TFrmMain
   Height = 665
   Top = 143
   Width = 909
-  Caption = 'Spresense USB Camera Utility for DNNRT ( PyData.Fukui )'
+  Caption = 'Spresense USB Camera Utility for DNNRT '
   ClientHeight = 645
   ClientWidth = 909
   DoubleBuffered = True
@@ -16,7 +16,7 @@ object FrmMain: TFrmMain
   Position = poScreenCenter
   LCLVersion = '2.0.4.0'
   object ImagePaint: TPaintBox
-    Left = 0
+    Left = 72
     Height = 376
     Top = 0
     Width = 592
@@ -26,34 +26,34 @@ object FrmMain: TFrmMain
     Cursor = crVSplit
     Left = 0
     Height = 10
-    Top = 403
+    Top = 446
     Width = 909
     Align = alBottom
     ResizeAnchor = akBottom
   end
   object PnlBottom: TPanel
     Left = 0
-    Height = 232
-    Top = 413
+    Height = 189
+    Top = 456
     Width = 909
     Align = alBottom
     Caption = 'PnlBottom'
-    ClientHeight = 232
+    ClientHeight = 189
     ClientWidth = 909
     TabOrder = 1
     object PnlMemo: TPanel
       Left = 1
-      Height = 230
+      Height = 187
       Top = 1
       Width = 907
       Align = alClient
       Caption = 'PnlMemo'
-      ClientHeight = 230
+      ClientHeight = 187
       ClientWidth = 907
       TabOrder = 0
       object DebugMemo: TMemo
         Left = 1
-        Height = 228
+        Height = 185
         Top = 1
         Width = 408
         Align = alLeft
@@ -78,7 +78,7 @@ object FrmMain: TFrmMain
       end
       object MemoSplit: TSplitter
         Left = 409
-        Height = 228
+        Height = 185
         Top = 1
         Width = 10
       end
@@ -86,20 +86,20 @@ object FrmMain: TFrmMain
   end
   object PnlOperation: TPanel
     Left = 739
-    Height = 379
+    Height = 422
     Top = 0
     Width = 170
     Align = alRight
     BevelOuter = bvSpace
-    ClientHeight = 379
+    ClientHeight = 422
     ClientWidth = 170
     Color = clSkyBlue
     ParentColor = False
     TabOrder = 2
     object BtnConnect: TButton
-      Left = 8
+      Left = 7
       Height = 25
-      Top = 40
+      Top = 24
       Width = 147
       Caption = 'Connect'
       OnClick = BtnConnect_Click
@@ -108,7 +108,7 @@ object FrmMain: TFrmMain
     object BtnStart: TButton
       Left = 24
       Height = 25
-      Top = 104
+      Top = 75
       Width = 131
       Caption = 'Start'
       OnClick = BtnS_Click
@@ -117,25 +117,25 @@ object FrmMain: TFrmMain
     object BtnStop: TButton
       Left = 24
       Height = 25
-      Top = 128
+      Top = 99
       Width = 131
       Caption = 'Stop'
       OnClick = BtnE_Click
       TabOrder = 2
     end
     object BtnImageJpegFile: TButton
-      Left = 24
+      Left = 23
       Height = 25
-      Top = 184
+      Top = 224
       Width = 131
-      Caption = 'Image (JPEG QVGA)'
+      Caption = 'Image (QVGA JPEG)'
       OnClick = BtnShot_Click
       TabOrder = 3
     end
     object BtnImagePgmFile: TButton
-      Left = 24
+      Left = 23
       Height = 25
-      Top = 208
+      Top = 248
       Width = 131
       Caption = 'Image (28x28 PGM) '
       OnClick = BtnImagePgmFileClick
@@ -153,23 +153,23 @@ object FrmMain: TFrmMain
     object Label1: TLabel
       Left = 24
       Height = 15
-      Top = 85
-      Width = 80
-      Caption = 'Preview Stream'
+      Top = 56
+      Width = 115
+      Caption = 'Image Preview Stream'
       ParentColor = False
     end
     object Label2: TLabel
-      Left = 24
+      Left = 23
       Height = 15
-      Top = 168
+      Top = 208
       Width = 92
       Caption = 'Data File Transfer '
       ParentColor = False
     end
     object Label3: TLabel
-      Left = 8
+      Left = 7
       Height = 15
-      Top = 24
+      Top = 8
       Width = 128
       Caption = 'USB Serial to SPRESENSE'
       ParentColor = False
@@ -186,60 +186,86 @@ object FrmMain: TFrmMain
       TabOrder = 6
     end
     object BtnSetFileFolder: TButton
-      Left = 8
+      Left = 7
       Height = 25
-      Top = 264
+      Top = 304
       Width = 147
       Caption = 'Set File Folder'
       OnClick = BtnSetFileFolderClick
       TabOrder = 7
     end
     object BtnOpenFileFolder: TButton
-      Left = 8
+      Left = 7
       Height = 25
-      Top = 288
+      Top = 328
       Width = 147
       Caption = 'Open File Folder'
       OnClick = BtnOpenFileFolderClick
       TabOrder = 8
     end
     object Label4: TLabel
-      Left = 8
+      Left = 7
       Height = 15
-      Top = 248
+      Top = 288
       Width = 118
       Caption = 'Data File Management'
       ParentColor = False
     end
     object Label5: TLabel
-      Left = 8
+      Left = 7
       Height = 15
-      Top = 320
+      Top = 360
       Width = 119
       Caption = 'Data FileName+SeqNo'
       ParentColor = False
     end
     object EdtFileName: TEdit
-      Left = 8
+      Left = 7
       Height = 23
-      Top = 341
+      Top = 381
       Width = 82
       TabOrder = 9
       Text = 'EdtFileName'
     end
     object EdtSeqNo: TEdit
-      Left = 96
+      Left = 95
       Height = 23
-      Top = 341
+      Top = 381
       Width = 58
       TabOrder = 10
       Text = 'EdtSeqNo'
+    end
+    object Label6: TLabel
+      Left = 24
+      Height = 15
+      Top = 136
+      Width = 128
+      Caption = 'DNN Image Recognition'
+      ParentColor = False
+    end
+    object BtnDNN_Start: TButton
+      Left = 24
+      Height = 25
+      Top = 155
+      Width = 131
+      Caption = 'Start'
+      OnClick = BtnDNN_StartClick
+      TabOrder = 11
+    end
+    object BtnDNN_Stop: TButton
+      Left = 24
+      Height = 25
+      Top = 179
+      Width = 131
+      Caption = 'Stop'
+      OnClick = BtnDNN_StopClick
+      TabOrder = 12
     end
   end
   object StatusBar: TStatusBar
     Left = 0
     Height = 24
-    Top = 379
+    Top = 422
     Width = 909
     Panels = <    
       item
@@ -255,6 +281,18 @@ object FrmMain: TFrmMain
         Width = 100
       end>
     SimplePanel = False
+  end
+  object ProgressBar1: TProgressBar
+    Left = 0
+    Height = 422
+    Top = 0
+    Width = 44
+    Align = alLeft
+    Orientation = pbVertical
+    Position = 85
+    Step = 1
+    TabOrder = 4
+    BarShowText = True
   end
   object MainMenu1: TMainMenu
     left = 32

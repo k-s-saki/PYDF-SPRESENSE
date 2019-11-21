@@ -2,7 +2,7 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 
 #define MyAppName "SPCAM2"
-#define MyAppVersion "20191002"
+#define MyAppVersion "20191003"
 #define MyAppPublisher "SAKIWAI Inc"
 #define MyAppURL "http://www.sakiwai.net"
 #define MyAppExeName "SPCAM2.exe"

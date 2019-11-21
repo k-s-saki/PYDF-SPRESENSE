@@ -7,7 +7,9 @@ interface
 uses
   Classes, SysUtils, FileUtil, Forms, Controls, Graphics, Dialogs, ComCtrls,
   Windows, Menus, ExtCtrls, ActnList, LCLType, types, Clipbrd,
-  StdCtrls, Synaser,IniFiles,windirs;
+  StdCtrls, Synaser,IniFiles,windirs,
+  intfgraphics,graphtype,fpImage,
+  SpCam_Functions;
 
 const
   SEC:TDateTime  =0;
@@ -22,13 +24,15 @@ type
     ImageSize:integer;
   end;
 
-  { TFrmMain }
+{ TFrmMain }
   TFrmMain = class(TForm)
     BtnConnect: TButton;
+    BtnDNN_Start: TButton;
     BtnStop: TButton;
     BtnImagePgmFile: TButton;
     BtnStart: TButton;
     BtnImageJpegFile: TButton;
+    BtnDNN_Stop: TButton;
     Button1: TButton;
     BtnSetFileFolder: TButton;
     BtnOpenFileFolder: TButton;
@@ -41,6 +45,7 @@ type
     Label3: TLabel;
     Label4: TLabel;
     Label5: TLabel;
+    Label6: TLabel;
     MainMenu1: TMainMenu;
     PnlBottom: TPanel;
     PnlMemo: TPanel;
@@ -53,11 +58,14 @@ type
     MenuItemFile: TMenuItem;
     ImagePaint: TPaintBox;
     PnlOperation: TPanel;
+    ProgressBar1: TProgressBar;
     SelDirDlg: TSelectDirectoryDialog;
     SpreMemo: TMemo;
     StatusBar: TStatusBar;
     Timer1: TTimer;
     procedure BtnConnect_Click(Sender: TObject);
+    procedure BtnDNN_StartClick(Sender: TObject);
+    procedure BtnDNN_StopClick(Sender: TObject);
     procedure BtnImagePgmFileClick(Sender: TObject);
     procedure BtnShot_Click(Sender: TObject);
     procedure BtnS_Click(Sender: TObject);
@@ -107,20 +115,22 @@ type
 
     function  Serial_IsError(aSerial:TBlockSerial; aDebugStr:string):boolean;
 
-
     function  CheckDebugMsg(s:string):boolean;
     procedure Debug(s:string);
     procedure Error(s:string);
   end;
 
+
 var
   FrmMain: TFrmMain;
+
 
 implementation
 
 uses ConnectForm;
 
 {$R *.lfm}
+
 
 { TFrmMain }
 
@@ -323,6 +333,22 @@ begin
   end;
 end;
 
+procedure TFrmMain.BtnDNN_StartClick(Sender: TObject);
+begin
+  if FSer=nil then exit;
+  //FTransferCmd:='D';
+  Debug('Start DNN Image Recognition');
+  FSer.SendString('D');
+end;
+
+procedure TFrmMain.BtnDNN_StopClick(Sender: TObject);
+begin
+  if FSer=nil then exit;
+  //FTransferCmd:='d';
+  Debug('Stop DNN Image Recognition ');
+  FSer.SendString('d');
+end;
+
 procedure TFrmMain.BtnImagePgmFileClick(Sender: TObject);
 begin
   if FSer=nil then exit;
@@ -393,90 +419,12 @@ end;
 
 procedure TFrmMain.FormClose(Sender: TObject; var CloseAction: TCloseAction);
 begin
-  FIni.WriteString('File','Name',EdtFileName.Text);
-  FIni.WriteString('File','SeqNo',EdtSeqNo.Text);
-end;
-
-function convertRGB565(ms:TMemoryStream; bmp: Graphics.TBitmap):boolean;
-  type
-    TFormat565 = packed record
-      case Integer of
-      0: (AsWord:WORD);
-      1: (AsByte:Array[0..1] of Byte);
-    end;
-
-var
-  pMem: PByte;
-  LineIndex, PixelIndex: Integer;
-  Data565:TFormat565;
-  dR,dG,dB:byte;
-  w:WORD;
-begin
-  result:=false;
-  bmp.BeginUpdate();
-  for LineIndex := 0 to bmp.Height - 1 do
+  if CloseAction = caFree then
   begin
-    pMem := bmp.ScanLine[LineIndex];
-    for PixelIndex := 0 to bmp.Width - 1 do
-    begin
-      Data565.AsByte[0]:=ms.ReadByte();
-      Data565.AsByte[1]:=ms.ReadByte();
-      w:=Data565.AsWord;
-      dR:= (((w and $f800) shr 11) shl 3);
-      dG:= (((w and $07E0) shr  5) shl 2);
-      dB:=  ((w and $001F) shl 3);
-      //Windowsでは BitmapはBGRの順
-      (pMem+0)^:= dB;
-      (pMem+1)^:= dG;
-      (pMem+2)^:= dR;
-      pMem:=pMem+3;
-    end;
-  end;
-  bmp.EndUpdate();
-  result:=true;
-end;
-
-function convertGray(ms:TMemoryStream; bmp: Graphics.TBitmap):boolean;
-
-type
-  TMemoryFormatGray = packed array [0 .. MaxInt] of Byte;
-  PMemoryFormatGray = ^TMemoryFormatGray;
-
-var
-  pMem: PMemoryFormatGray;
-  LineIndex, PixelIndex: Integer;
-  cnt:integer;
-begin
-  result:=false;
-  cnt:=0;
-  bmp.BeginUpdate();
-  for LineIndex := 0 to bmp.Height - 1 do
-  begin
-    pMem := bmp.ScanLine[LineIndex];
-    for PixelIndex := 0 to bmp.Width - 1 do
-    begin
-      pMem^[PixelIndex]:= ms.ReadByte();
-      inc(cnt);
-    end;
-  end;
-  bmp.EndUpdate();
-  result:=true;
-end;
-
-function convertJpeg(ms:TMemoryStream; bmp: Graphics.TBitmap):boolean;
-var jpg:TJPEGImage;
-begin
-  jpg:=TJPEGImage.Create;
-  try
-    jpg.LoadFromStream(ms);
-    bmp.Assign(jpg);
-    result:=true;
-  finally
-    jpg.Free;
+    FIni.WriteString('File','Name',EdtFileName.Text);
+    FIni.WriteString('File','SeqNo',EdtSeqNo.Text);
   end;
 end;
-
-
 
 function TFrmMain.CheckDebugMsg(s:string):boolean;
 begin
@@ -556,18 +504,6 @@ begin
 end;
 
 
-function GetStringProperty(s:string):string;
-begin
-  result:=Trim( Copy(s, AnsiPos('=',s)+1, length(s)) );
-end;
-
-function GetIntegerProperty(s:string):integer;
-var w:string;
-begin
-  w:= GetStringProperty(s);
-  result:= StrToIntDef(w,0);
-end;
-
 function TFrmMain.Serial_ReadImageTags(aSerial: TBlockSerial;
   out oImageTags: TImageTags): boolean;
 var s:string;
@@ -625,7 +561,7 @@ begin
         end;
 
         MemStream.Position:=0;
-        convertJpeg(MemStream,FBmp);
+        ConvertJpeg(MemStream,FBmp);
         ImagePaint.Repaint;
         Debug('Draw Success');
       except
@@ -653,12 +589,12 @@ begin
 
   if imgTags.ImageSize>0 then
   begin
-    MemStream:=TMemoryStream.Create;
 
     fn:= FIni.ReadString('Folder','Image',MyDocDir);
     fn:= fn+'\'+EdtFileName.Text+EdtSeqNo.Text+'.'+imgTags.ImageType;
-
     Debug('Save filename ='+fn);
+
+    MemStream:=TMemoryStream.Create;
     fs:=TFileStream.Create( fn,fmOpenWrite or fmCreate );
     try
 
@@ -672,9 +608,17 @@ begin
       fs.CopyFrom(MemStream, MemStream.Size);
       edtSeqNo.Text:= IntToStr( StrToIntDef(edtSeqNo.Text,0) +1 );
       Debug('Save Success , NextSeqNo='+edtSeqNo.Text);
+      fs.Free;
+
+      if imgTags.ImageType='PGM' then
+      begin
+        // PGMファイルをPNGファイルに変換
+        ConvertGrayPgmToBmp(fn);
+      end;
+
     finally
       MemStream.Free;
-      fs.Free;
+      //fs.Free;
     end;
   end;
 end;
