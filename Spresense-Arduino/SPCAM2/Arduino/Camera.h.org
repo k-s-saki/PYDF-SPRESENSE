@@ -690,35 +690,6 @@ public:
   CamImage takePicture();
 
   /**
-   * @brief Start capture picture.
-   * @details [en] Start a sequence of capturing pictures with picture parameters which is set on #setStillPictureImageFormat() . <BR>
-   *          [ja] 写真撮影。 #setStillPictureImageFormat() で設定した写真フォーマットに従って、連続的に写真を撮るシーケンスを開始する
-   * @return [en] result. true or false <BR>
-   *         [ja] 結果に応じて true/ false が返される
-  */
-  bool capturePictureStart();
-
-  /**
-   * @brief Capture a picture.
-   * @details [en] Capture a picture in a sequence start with capturePictureStart()  <BR>
-   *          [ja] capturePictureStart()で開始されるシーケンス中での写真撮影を（必要であれば複数回）行う。 
-   * @return [en] Taken picture. If any error occured, the result value has empty object. <BR>
-   *         [ja] 撮影された写真イメージ。もし何らかのエラーが発生した場合、空のCamImageオブジェクトが返される。
-  */
-  CamImage capturePicture( );
-
-
-  /**
-   * @brief Stop capture picture
-   * @details [en] End capture a series of pictures in a sequence start with capturePictureStart() <BR>
-   *          [ja] capturePictureStart()で開始されたシーケンスを終了する。
-   * @return [en] result. true or false <BR>
-   *         [ja] 結果に応じて true/ false が返される
-  */
-  bool capturePictureStop( );
-
-
-  /**
    * @brief De-initialize Spresense Camera
    * @details [en] De-initialize Spresense Camera. This method cancel everything of
    *               Camera. If you want to use the Camera again, you should call

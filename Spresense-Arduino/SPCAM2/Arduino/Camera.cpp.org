@@ -1135,57 +1135,6 @@ CamImage CameraClass::takePicture( )
   return CamImage();  // Return empty CamImage because of any error occured.
 }
 
-// Public : Capture Picture Start.
-bool CameraClass::capturePictureStart()
-{
-  if (is_device_ready())
-  {
-    if(still_img && still_img->img_buff->is_queued())
-    {
-	  if (ioctl(video_fd, VIDIOC_TAKEPICT_START, 0) == 0)
-  	    return true;
-    } 
-  }
-
-  return false;
-}
-
-// Public : Capture a Picture.
-CamImage CameraClass::capturePicture( )
-{
-  struct v4l2_buffer buf;
-  if (is_device_ready()) 
-  {
-    if(still_img && still_img->img_buff->is_queued())
-    {
-      if (ioctl_dequeue_stream_buf(&buf, V4L2_BUF_TYPE_STILL_CAPTURE) == 0)
-	  {
-        still_img->img_buff->queued(false);
-        still_img->setActualSize((size_t)buf.bytesused);
-        return *still_img;
-	  }
-    } 
-  }
-  
-  return CamImage();
-}
-
-
-// Public : Capture Picture Stop.
-bool CameraClass::capturePictureStop( )
-{
-  if (is_device_ready())
-  {
-    if(still_img && still_img->img_buff->is_queued())
-    { 
-      if (ioctl(video_fd, VIDIOC_TAKEPICT_STOP, false) == 0)
-        return true;
-    }  
-  }
-
-  return false;
-}
-
 // Public : Finish to use the Camera.
 void CameraClass::end()
 {
