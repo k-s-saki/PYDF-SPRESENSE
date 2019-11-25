@@ -1,11 +1,11 @@
 object FrmMain: TFrmMain
   Left = 354
-  Height = 665
+  Height = 724
   Top = 143
-  Width = 909
+  Width = 1015
   Caption = 'Spresense USB Camera Utility for DNNRT '
-  ClientHeight = 645
-  ClientWidth = 909
+  ClientHeight = 704
+  ClientWidth = 1015
   DoubleBuffered = True
   Menu = MainMenu1
   OnClose = FormClose
@@ -16,9 +16,9 @@ object FrmMain: TFrmMain
   Position = poScreenCenter
   LCLVersion = '2.0.4.0'
   object ImagePaint: TPaintBox
-    Left = 72
+    Left = 88
     Height = 376
-    Top = 0
+    Top = 8
     Width = 592
     OnPaint = ImagePaint_Paint
   end
@@ -26,30 +26,30 @@ object FrmMain: TFrmMain
     Cursor = crVSplit
     Left = 0
     Height = 10
-    Top = 446
-    Width = 909
+    Top = 505
+    Width = 1015
     Align = alBottom
     ResizeAnchor = akBottom
   end
   object PnlBottom: TPanel
     Left = 0
     Height = 189
-    Top = 456
-    Width = 909
+    Top = 515
+    Width = 1015
     Align = alBottom
     Caption = 'PnlBottom'
     ClientHeight = 189
-    ClientWidth = 909
+    ClientWidth = 1015
     TabOrder = 1
     object PnlMemo: TPanel
       Left = 1
       Height = 187
       Top = 1
-      Width = 907
+      Width = 1013
       Align = alClient
       Caption = 'PnlMemo'
       ClientHeight = 187
-      ClientWidth = 907
+      ClientWidth = 1013
       TabOrder = 0
       object DebugMemo: TMemo
         Left = 1
@@ -85,13 +85,13 @@ object FrmMain: TFrmMain
     end
   end
   object PnlOperation: TPanel
-    Left = 739
-    Height = 422
+    Left = 845
+    Height = 481
     Top = 0
     Width = 170
     Align = alRight
     BevelOuter = bvSpace
-    ClientHeight = 422
+    ClientHeight = 481
     ClientWidth = 170
     Color = clSkyBlue
     ParentColor = False
@@ -175,9 +175,9 @@ object FrmMain: TFrmMain
       ParentColor = False
     end
     object CbDebugPanel: TCheckBox
-      Left = 48
+      Left = 64
       Height = 19
-      Top = 424
+      Top = 448
       Width = 87
       Caption = 'Debug Panel'
       Checked = True
@@ -261,12 +261,20 @@ object FrmMain: TFrmMain
       OnClick = BtnDNN_StopClick
       TabOrder = 12
     end
+    object Button2: TButton
+      Left = 7
+      Height = 25
+      Top = 416
+      Width = 75
+      Caption = 'BtnFileTransfer'
+      TabOrder = 13
+    end
   end
   object StatusBar: TStatusBar
     Left = 0
     Height = 24
-    Top = 422
-    Width = 909
+    Top = 481
+    Width = 1015
     Panels = <    
       item
         Text = 'COM'
@@ -282,17 +290,23 @@ object FrmMain: TFrmMain
       end>
     SimplePanel = False
   end
-  object ProgressBar1: TProgressBar
-    Left = 0
-    Height = 422
-    Top = 0
-    Width = 44
-    Align = alLeft
-    Orientation = pbVertical
-    Position = 85
-    Step = 1
-    TabOrder = 4
-    BarShowText = True
+  object LblDnn: TLabel
+    Left = 104
+    Height = 144
+    Top = 24
+    Width = 682
+    Alignment = taCenter
+    Anchors = [akTop, akLeft, akRight]
+    AutoSize = False
+    Caption = '123'
+    Font.CharSet = SHIFTJIS_CHARSET
+    Font.Color = clBlack
+    Font.Height = -96
+    Font.Name = 'メイリオ'
+    Font.Pitch = fpVariable
+    Font.Quality = fqDraft
+    ParentColor = False
+    ParentFont = False
   end
   object MainMenu1: TMainMenu
     left = 32

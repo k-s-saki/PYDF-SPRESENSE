@@ -6,8 +6,8 @@ interface
 
 uses
   Classes, SysUtils, FileUtil, Forms, Controls, Graphics, Dialogs, ComCtrls,
-  Windows, Menus, ExtCtrls, ActnList, LCLType, types, Clipbrd,
-  StdCtrls, Synaser,IniFiles,windirs,
+  Menus, ExtCtrls, ActnList, LCLType, types, Clipbrd,
+  StdCtrls, windirs,
   intfgraphics,graphtype,fpImage;
 
 
@@ -25,9 +25,7 @@ implementation
 
 procedure ConvertGrayPgmToBmp(aPgmFileName:string);
 var
-  //png_fn,
   bmp_fn, ln:string;
-  //png: TPortableNetworkGraphic;
   img: TLazIntfImage;
   col: TFPColor;
   ix,iy,i:integer;
@@ -39,10 +37,8 @@ var
 const
   SX=28; SY=28;
 begin
-  //png_fn:= ChangeFileExt( aPgmFileName, '.png');
   bmp_fn:= ChangeFileExt( aPgmFileName, '.bmp');
 
-  //png := TPortableNetworkGraphic.Create;
   img := TLazIntfImage.Create(SX,SY,[riqfGrey]);
   fs  := TFileStream.Create(aPgmFileName, fmOpenRead);
   ch:=#0;
@@ -66,20 +62,12 @@ begin
       for ix := 0 to SX - 1 do
       begin
         pix:= fs.ReadByte shl 8;
-        //pix:= fs.ReadByte;
         col.red:= pix;
         col.green:=pix;
         col.blue:=pix;
         img.Colors[ix, iy] := col;
       end;
     end;
-    {
-    png.LoadFromIntfImage(img);
-    png.ColorType:=ctGrayscale;
-    png.PixelFormat:= pf8bit;
-    png.Monochrome:=true;
-    png.SaveToFile(png_fn);
-    }
 
     desc:=img.DataDescription;
     desc.Depth:=8;
@@ -87,7 +75,6 @@ begin
     img.DataDescription:=desc;
     img.SaveToFile(bmp_fn);
   finally
-    //png.Free;
     img.Free;
     fs.Free;
   end;
@@ -123,6 +110,10 @@ var
   w:WORD;
 begin
   result:=false;
+  bmp.Width:=320;
+  bmp.Height:=240;
+  bmp.PixelFormat:=pf24bit;
+
   bmp.BeginUpdate();
   for LineIndex := 0 to bmp.Height - 1 do
   begin
@@ -159,6 +150,10 @@ var
 begin
   result:=false;
   cnt:=0;
+  bmp.Width:=320;
+  bmp.Height:=240;
+  bmp.PixelFormat:=pfGray;
+
   bmp.BeginUpdate();
   for LineIndex := 0 to bmp.Height - 1 do
   begin

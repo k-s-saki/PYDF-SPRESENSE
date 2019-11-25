@@ -1,17 +1,15 @@
 
 #include <Camera.h> // カメラを使う
 #include <stdio.h>  // sprintf に必要
-
-#ifdef _DNNRT_
+#include <Arduino.h>
 
 #include "ge.h"     // ラスタオペレーション(SONYさまソース改造)
 #include <DNNRT.h>
-DNNRT dnnrt;      // DNNRTオブジェクト
+DNNRT* pDNNRT = NULL;      // DNNRTオブジェクト
 
 #include <SDHCI.h>  //SDカードを使う--＞使いません
 SDClass  theSD; // SDカードは自分で宣言する。　一方、theCameraは定義されているので不要
 
-#endif
 
 //Typedef.---------------------------------------------------
 
@@ -47,6 +45,7 @@ int  frameNo=0;
 /* フラグ */
 bool isTransfer = false;
 bool beingCaptured = false;
+bool isDNNReady = false;
 
 /* カメラモード */
 CameraMode cameraMode = cmNone;
@@ -79,11 +78,22 @@ void responseMsg(String s){
   digitalWrite(LED_SERIAL, LOW);
 }
 
-void transferBinary(uint8_t* pData,int nDataSize){
+void sendBinaryData(uint8_t* pData,int nDataSize){
   digitalWrite(LED_SERIAL, HIGH);
   Serial.write(pData,nDataSize);
   Serial.flush();
   digitalWrite(LED_SERIAL, LOW);
+}
+
+void recvBinaryDataToFile(File& aFile, int nDataSize){
+  char buff[1024];
+  int readed=0;
+  for(int readed=0; readed< nDataSize; ){
+    int toReadBytes= min(1024, nDataSize - readed );
+    int n = Serial.readBytes(buff,toReadBytes);
+    readed= readed + n;
+    aFile.write(buff,n);
+  }
 }
 
 
@@ -163,7 +173,7 @@ char checkSerialCommand()
     else if (cmd=='D'){
       Debug("DNN Start Command");
       if (beingCaptured){
-        //CmdCaptureEnd();
+        CmdCaptureEnd();
       }
       
       CmdDNN(true);
@@ -172,11 +182,16 @@ char checkSerialCommand()
     else if (cmd=='d'){
       Debug("DNN End Command");
       if (beingCaptured){
-        //CmdCaptureEnd();
+        CmdCaptureEnd();
       }
       
       CmdDNN(false);
       responseMsg("OK");
+    }
+    else if (cmd=='F'){
+      Debug("File Receive Command"){
+        CmdFileReceive();
+      }
     }
     else{
       Debug( "Undefined Command :"+String(cmd));
@@ -187,78 +202,94 @@ char checkSerialCommand()
   return 0;
 }
 
-#ifdef _DNNRT_
+void CmdFileReceive(){
+  String file_name=Serial.readStringUntil('\n');
+  Debug("CmdFileReceive filename="+file_name);
+  String s_size=Serial.readStringUntil('\n');
+  Debug("filesize="+s_size);
+  File f;
+  f= theSD.open(file_name);
+  recvBinaryDataToFile( f, s_size.toInt());
+  f.close();
+}
+
 uint8_t img_mem[28 * 28] __attribute__((aligned(16)));
 DNNVariable dnn_in(28 * 28);
 bool findPiyo = false;
-#endif
 
 #define WHITE_BALANCE_FRAMES 24
-int nframes;
+int nframes=0;
 
 void CamCB(CamImage img)
 {
 
-  if (img.isAvailable())
-  {
-
-    // Check frame counts for stop auto white balance
-    if (nframes == WHITE_BALANCE_FRAMES)
-    {
-      // Disable auto white balance
-
-      theCamera.setAutoWhiteBalance(false);
-    }
-    nframes++;
-
-    //とりあえず4フレームおきに処理
-    if (nframes % 4 !=0)
-      return;
+  if (!img.isAvailable())
+    return;
     
-#ifdef _DNNRT_
-    float * pInputData;
-    unsigned int i;
+  // Check frame counts for stop auto white balance
+  if (nframes == WHITE_BALANCE_FRAMES)
+  {
+    // Disable auto white balance
 
-    // ge.h / cpp はSONYさん製作のラスターオペレーション（画像の便利関数）関数がはいってました。（ジャンケンのサンプルから取得して一部改変）
-    // 決め打ちで228, 228 YUV から 28x28のメモリを作っているようですが、ビット操作ではなく、ハードウエアでやっている（ような）
-    GE.shrink(img, img_mem);
-
-    // 入力変数　dnn_in は1次元：要素数28x28で初期化されています。そこに画素データをセットします。
-    pInputData = dnn_in.data();
-    for (i = 0; i < 28 * 28; i++)
-    {
-      pInputData[i] = (float)img_mem[i];
-    }
-
-    // DNNRTにセットして・・
-    dnnrt.inputVariable(dnn_in, 0);
-    // 推論して
-    dnnrt.forward();
-    // 結果の取得
-    DNNVariable dnn_out = dnnrt.outputVariable(0);
-
-    char s[40];
-    double oPiyo = dnn_out[1];
-    //sprintf(s, "DNN Output [0]=%.4f  [1]=%.4f", dnn_out[0],dnn_out[1]);     
-    if (oPiyo == 1.0)
-      oPiyo = 0.0;
-
-    sprintf(s, "Piyo %.8f ", oPiyo);
-    String str(s);
-    Debug(str);
-
-    //Piyoかどうかの判定
-    bool b = (oPiyo > 0.80);
-    if (b && !findPiyo){
-      Debug("Find Piyo!");
-    }
-    if (!b && findPiyo){
-      Debug("Lost sight of Piyo!");
-    }
-    findPiyo = b;
-#endif
-
+    theCamera.setAutoWhiteBalance(false);
   }
+  nframes++;
+
+  //とりあえず4フレームおきに処理
+  //if (nframes % 4 !=0)
+  //  return;
+
+
+  float * pInputData;
+  unsigned int i;
+
+  // ge.h / cpp はSONYさん製作のラスターオペレーション（画像の便利関数）関数がはいってました。（ジャンケンのサンプルから取得して一部改変）
+  // 決め打ちで228, 228 YUV から 28x28のメモリを作っているようですが、ビット操作ではなく、ハードウエアでやっている（ような）
+  GE.shrink(img, img_mem);
+
+  // 入力変数　dnn_in は1次元：要素数28x28で初期化されています。そこに画素データをセットします。
+  pInputData = dnn_in.data();
+  for (i = 0; i < 28 * 28; i++)
+  {
+    pInputData[i] = (float)img_mem[i];
+  }
+
+  // DNNRTにセットして・・
+  pDNNRT->inputVariable(dnn_in, 0);
+  // 推論して
+  pDNNRT->forward();
+  // 結果の取得
+  DNNVariable dnn_out = pDNNRT->outputVariable(0);
+  int out_size = dnn_out.size();
+
+  String s="DNN Output:";
+  for (int i=0; i< out_size; i++){
+    char tmp[30];
+    sprintf(tmp,"[%d]=%.4f",i,dnn_out[i]);
+    if (i!=0){
+      s=s+",";
+    }
+    s = s + String(tmp);
+  }
+  Debug(s);
+
+  //判定イメージの送信
+  String img_tag;
+  //イメージを変換(RGB565)
+  //img.convertPixFormat(CAM_IMAGE_PIX_FMT_RGB565);
+  //img_tag="RGB565";
+  img.convertPixFormat(CAM_IMAGE_PIX_FMT_GRAY);
+  img_tag="GRAY";
+
+  uint8_t* buf = img.getImgBuff();
+  int bufSize = img.getImgSize();
+  SendImageProperty("ImageStream", 0, img_tag, bufSize);  
+
+  //データ送信  
+  sendBinaryData(buf,bufSize);
+  Debug("DNN Image File transfer end.");   
+  
+  
 }
 void SetCameraMode(CameraMode cm)
 {
@@ -345,17 +376,20 @@ void CmdShot()
 {
   Debug("CmdShot()");
   SetCameraMode(cmJpegFile);
+  /*
   if (StartCapture()== false){
     Debug("CmdShot() CaptureStart Error ");
     return;
   }
   CamImage img = theCamera.capturePicture();
+  */
+  CamImage img = theCamera.takePicture();
   if (img.isAvailable()) 
   {
       uint8_t* buf = img.getImgBuff();
       int bufSize = img.getImgSize();
       SendImageProperty("ImageFile", jpegFileNo, "JPEG", bufSize);    
-      transferBinary(buf,bufSize);
+      sendBinaryData(buf,bufSize);
       Debug("JPEG Picture File transfer end.");   
       jpegFileNo++;
 /*
@@ -371,26 +405,29 @@ void CmdShot()
 */
   }
   else
-    Debug("CmdShot(): img isAvailable()==false ");  
-
+    Debug("CmdShot(): takePicture .. img isAvailable()==false ");  
+  /*
   img = theCamera.capturePicture();  // 現時点ではStopのために2回必要（captureが１回だとStopに失敗する)
   Debug("CmdShot(): Try Stop Capture. ");  
   if (StopCapture())
     Debug("CmdShot(): Try Stop Capture Success. ");
   else
     Debug("CmdShot(): Try Stop Capture Error. ");
+    */
 }
 
 void CmdGrayPgm(){
   Debug("CmdGrayPgm()");
 
   SetCameraMode(cmPgmFile);
+  /*
   if (StartCapture()== false){
     Debug("CmdGrayPgm() CaptureStart Error ");
     return;
   }
+  */
   
-  CamImage img = theCamera.capturePicture();
+  CamImage img = theCamera.takePicture();
   if (img.isAvailable()) {
     CamImage clip_image;
     //(320x240) -Clip-> (224x224)-Resize-> (28x28)  // ByHW(=By Hardware accelarated function) 
@@ -426,14 +463,16 @@ void CmdGrayPgm(){
     }
   }
   else
-    Debug("CmdGrayPgm(): img isAvailable()==false ");  
+    Debug("CmdGrayPgm(): takePicture .. img isAvailable()==false ");  
 
+  /*
   img = theCamera.capturePicture();  // 現時点ではStopのために2回必要（captureが１回だとStopに失敗する)
   Debug("CmdGrayPgm(): Try Stop Capture. ");  
   if (StopCapture())
     Debug("CmdGrayPgm(): Try Stop Capture Success. ");
   else
     Debug("CmdGrayPgm(): Try Stop Capture Error. ");
+  */
 }
 
 void streamImage(){
@@ -453,7 +492,7 @@ void streamImage(){
   int bufSize= img.getImgSize();
 
   SendImageProperty("ImageStream", frameNo, "JPEG", bufSize);    
-  transferBinary(buf,bufSize);
+  sendBinaryData(buf,bufSize);
   // Debug("JPEG Picture Stream end.");
   frameNo++;
   
@@ -490,16 +529,51 @@ bool isErrorStopInLoop()
 
 void CmdDNN(bool bEnable){
   if (bEnable){
-    Debug("START CameraCallback for DNN");
+    startDNNRT();
+    Debug("CmdDNN() START CameraCallback for DNN");
+    nframes=0;
     theCamera.startStreaming(true, CamCB);
   }
   else{
-    Debug("STOP CameraCallback for DNN");
+    endDNNRT();
+    Debug("CmdDNN() STOP CameraCallback for DNN");
     theCamera.startStreaming(false, CamCB);   
   }
 }
 
 //Override Functions of Arduino------------------------------------------------------
+
+void startDNNRT()
+{
+  if (isDNNReady)
+    endDNNRT();
+    
+  /* DNNRTを初期化 */
+  digitalWrite(LED_DNN, HIGH);
+  Debug("Loading DNN file");
+
+  File nnbfile("sanbiki.nnb");
+  if (!nnbfile) {
+    Debug("DNN File Not found.");
+    return;
+  }
+
+  Debug("Initialize DNNRT");
+  int ret = pDNNRT->begin(nnbfile);
+  if (ret < 0){
+    Debug("DNNRT initialize error.");
+  }
+  isDNNReady=true;
+}
+
+void endDNNRT()
+{
+  Debug("Finalize DNNRT");
+  if (isDNNReady){
+    pDNNRT->end();
+    isDNNReady=false;   
+  }
+}
 
 void setup() 
 {
@@ -515,27 +589,7 @@ void setup()
   theCamera.begin();
   theCamera.setAutoWhiteBalanceMode(CAM_WHITE_BALANCE_DAYLIGHT);
 
-#ifdef _DNNRT_
-
-  /* DNNRTを初期化 */
-  
-  digitalWrite(LED_DNN, HIGH);
-  Debug("Loading DNN file");
-
-  File nnbfile("Piyo_LeNet.nnb");
-  if (!nnbfile) {
-    Debug("DNN File Not found.");
-    return;
-  }
-
-  Debug("Initialize DNNRT");
-  int ret = dnnrt.begin(nnbfile);
-  if (ret < 0){
-    Debug("DNNRT initialize error.");
-  }
-#endif
-
-
+  pDNNRT = new DNNRT();
   // 全LED点灯
   digitalWrite(LED0, HIGH);
   digitalWrite(LED1, HIGH);

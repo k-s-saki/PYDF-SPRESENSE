@@ -36,6 +36,7 @@ type
     Button1: TButton;
     BtnSetFileFolder: TButton;
     BtnOpenFileFolder: TButton;
+    Button2: TButton;
     CbDebugPanel: TCheckBox;
     DebugMemo: TMemo;
     EdtFileName: TEdit;
@@ -46,6 +47,7 @@ type
     Label4: TLabel;
     Label5: TLabel;
     Label6: TLabel;
+    LblDnn: TLabel;
     MainMenu1: TMainMenu;
     PnlBottom: TPanel;
     PnlMemo: TPanel;
@@ -58,7 +60,6 @@ type
     MenuItemFile: TMenuItem;
     ImagePaint: TPaintBox;
     PnlOperation: TPanel;
-    ProgressBar1: TProgressBar;
     SelDirDlg: TSelectDirectoryDialog;
     SpreMemo: TMemo;
     StatusBar: TStatusBar;
@@ -116,6 +117,8 @@ type
     function  Serial_IsError(aSerial:TBlockSerial; aDebugStr:string):boolean;
 
     function  CheckDebugMsg(s:string):boolean;
+    procedure GetDnnResult(s:string);
+
     procedure Debug(s:string);
     procedure Error(s:string);
   end;
@@ -148,7 +151,6 @@ begin
 
   FBmp:=Graphics.TBitmap.Create;
   FBmp.SetSize(BW,BH);
-  FBmp.PixelFormat:=pf24bit;
 
   FConnect := false;
   FPrevEndDetect:=false;
@@ -166,6 +168,7 @@ end;
 
 procedure TFrmMain.FormShow(Sender: TObject);
 begin
+  LblDnn.Visible:=false;
   DisplayConnectInfo();
   EdtFileName.Text:= FIni.ReadString('File','Name','ABC');
   EdtSeqNo.Text:= FIni.ReadString('File','SeqNo','1');
@@ -335,6 +338,7 @@ end;
 
 procedure TFrmMain.BtnDNN_StartClick(Sender: TObject);
 begin
+  LblDNN.Visible:=true;
   if FSer=nil then exit;
   //FTransferCmd:='D';
   Debug('Start DNN Image Recognition');
@@ -368,6 +372,7 @@ end;
 
 procedure TFrmMain.BtnS_Click(Sender: TObject);
 begin
+  LblDNN.Visible:=false;
   if FSer=nil then exit;
   FTransferCmd:='C';
   FBmp.PixelFormat:=pf24bit;
@@ -434,8 +439,48 @@ begin
   if s[1]='@' then begin
     result:=true;
     SpreMemo.Lines.Add(s);
+
+    //DNNの文字列かどうか
+    if Pos('@DNN Output',s)>0 then begin
+      GetDnnResult(s);
+    end;
   end;
 end;
+
+
+procedure TFrmMain.GetDnnResult(s:string);
+var
+  sa:TStringArray;
+  i:integer;
+  v:array[0..3] of double;
+begin
+  sa:=s.Split([':','=',',']);
+  //[0] DNN Output
+  //[1] INDEX(0)
+  //[2] VALUE
+  for i:=Low(sa) to High(sa) do begin
+    SpreMemo.Lines.Add(IntToStr(i)+':'+sa[i]);
+  end;
+  if High(sa)>=8 then
+  begin
+    for i:=0 to 3 do
+    begin
+      v[i]:= StrToFloatDef(sa[2+i*2],0.0);
+    end;
+    if v[0]>0.8 then
+      LblDnn.Caption:='いない'
+    else if v[1]>0.9 then
+      LblDnn.Caption:='ぴよ'
+    else if v[2]>0.9 then
+      LblDnn.Caption:='すみっこ'
+    else if v[3]>0.9 then
+      LblDnn.Caption:='オリーブ'
+    else
+      LblDnn.Caption:='??';
+  end;
+end;
+
+
 
 
 function TFrmMain.Serial_RecvStr(aSerial: TBlockSerial;  aTimeout:integer; out oRecvStr: string;
@@ -561,7 +606,13 @@ begin
         end;
 
         MemStream.Position:=0;
-        ConvertJpeg(MemStream,FBmp);
+        if imgTags.ImageType='JPEG' then
+          ConvertJpeg(MemStream,FBmp)
+        else if imgTags.ImageType='RGB565' then
+          ConvertRGB565(MemStream,FBmp)
+        else if imgTags.ImageType='GRAY' then
+          ConvertGray(MemStream,FBmp);
+
         ImagePaint.Repaint;
         Debug('Draw Success');
       except
