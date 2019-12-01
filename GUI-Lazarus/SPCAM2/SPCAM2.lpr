@@ -34,6 +34,7 @@ end.
 begin
 
   RequireDerivedFormResource := True;
+  Application.Scaled:=True;
   Application.Title:='Spresense Camera Viewer - USB';
   Application.Initialize;
   Application.CreateForm(TFrmMain, FrmMain);

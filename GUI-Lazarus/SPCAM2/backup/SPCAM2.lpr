@@ -10,7 +10,7 @@ uses
   FileUtil,Classes,
 
   Interfaces, // this includes the LCL widgetset
-  Forms, MainForm, ConnectForm;
+  Forms, MainForm, ConnectForm, spcam_functions;
 
 {$R *.res}
 

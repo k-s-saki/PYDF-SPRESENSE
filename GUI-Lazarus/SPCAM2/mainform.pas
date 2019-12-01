@@ -56,6 +56,7 @@ type
     Label6: TLabel;
     LblDnn: TLabel;
     MainMenu1: TMainMenu;
+    MenuItem_OpenIniFile: TMenuItem;
     PnlBottom: TPanel;
     PnlMemo: TPanel;
     MemoSplit: TSplitter;
@@ -63,7 +64,7 @@ type
     MenuItem1: TMenuItem;
     MenuItemSave: TMenuItem;
     MenuItem3: TMenuItem;
-    MenuItem4: TMenuItem;
+    MenuItem_Exit: TMenuItem;
     MenuItemFile: TMenuItem;
     ImagePaint: TPaintBox;
     PnlOperation: TPanel;
@@ -86,8 +87,9 @@ type
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure FormShow(Sender: TObject);
-    procedure MenuItem4Click(Sender: TObject);
+    procedure MenuItem_ExitClick(Sender: TObject);
     procedure ImagePaint_Paint(Sender: TObject);
+    procedure MenuItem_OpenIniFileClick(Sender: TObject);
     procedure Timer1Timer(Sender: TObject);
   private
     { private declarations }
@@ -131,6 +133,8 @@ type
     procedure Error(s:string);
 
     procedure DNN_Init();
+
+    function  GetIniFileName():string;
   end;
 
 
@@ -152,8 +156,6 @@ const
   BH=240;
 
 procedure TFrmMain.FormCreate(Sender: TObject);
-var
-  s:string;
 begin
   ImagePaint.Align:=alClient;
   SpreMemo.Align:=alClient;
@@ -165,12 +167,22 @@ begin
 
   FConnect := false;
   FPrevEndDetect:=false;
-  //s:= MyDocDir+ ExtractFileName(ChangeFileExt(ParamStr(0),'.ini'));
-  s:= ChangeFileExt(ParamStr(0),'.ini');
-  FIni := TINIFile.Create(s);
+
+  FIni := TINIFile.Create( GetIniFileName() );
   FDnnInfoList:= TDnnInfoList.Create;
 
 end;
+
+function TFrmMain.GetIniFileName(): string;
+begin
+  // iniファイルを MyDocumentに配置するとき
+  // result:= MyDocDir+ ExtractFileName(ChangeFileExt(ParamStr(0),'.ini'));
+
+  // iniファイルを実行ファイルと同じ場所に配置するとき
+  result:= ChangeFileExt(ParamStr(0),'.ini');
+
+end;
+
 
 procedure TFrmMain.FormDestroy(Sender: TObject);
 begin
@@ -218,9 +230,14 @@ begin
   end;
 end;
 
+procedure TFrmMain.MenuItem_OpenIniFileClick(Sender: TObject);
+begin
+  WinExec(PChar('notepad.exe "'+GetIniFileName()+'"'),SW_SHOWNORMAL);
+  ShowMessage('Iniファイルは文字コードANSIで保存してください。変更後の反映にはアプリケーションの再起動が必要です。');
+end;
 
 
-procedure TFrmMain.MenuItem4Click(Sender: TObject);
+procedure TFrmMain.MenuItem_ExitClick(Sender: TObject);
 begin
   Application.Terminate;
 end;
@@ -497,39 +514,44 @@ end;
 procedure TFrmMain.GetDnnResult(s:string);
 var
   sa:TStringArray;
-  i,j:integer;
-  v:array[0..3] of double;
+  cnt,i,j:integer;
+
+  v:array of double;
   detect:boolean;
 begin
   sa:=s.Split([':','=',',']);
-  //DNN Output : 0 = value0, 1=value1, 2=value2 ...
+  //s="@DNN Output:0=value0,1=value1,2=value2 ..."
+  cnt:= (Length(sa)-1) div 2;
 
+  SetLength(v, cnt );
+
+  for i:=0 to Length(v)-1 do
+  begin
+    v[i]:= StrToFloatDef(sa[2+i*2],0.0);
+  end;
+
+  (*
   for i:=Low(sa) to High(sa) do begin
     SpreMemo.Lines.Add(IntToStr(i)+':'+sa[i]);
   end;
+  *)
 
   detect:=false;
-  if High(sa)>=8 then
+
+  for j:=0 to FDnnInfoList.Count-1 do
   begin
-    for i:=0 to FDnnInfoList.Count-1 do
-    begin
-      v[i]:= StrToFloatDef(sa[2+i*2],0.0);
+    // check index.
+    if j>=cnt then break;
 
-      for j:=0 to FDnnInfoList.Count-1 do
-      begin
-        if v[i]> FDnnInfoList[j].Value then begin
-          lblDnn.Caption:= FDnnInfoList[j].Caption;
-          detect:=true;
-          break;
-        end;
-      end;
-
-      if detect then break;
+    if v[j]> FDnnInfoList[j].Value then begin
+      lblDnn.Caption:= FDnnInfoList[j].Caption;
+      detect:=true;
+      break;
     end;
-
-    if not detect then
-      LblDnn.Caption:='??';
   end;
+
+  if not detect then
+    LblDnn.Caption:='??';
 end;
 
 
