@@ -8,7 +8,7 @@ uses
   Classes, SysUtils, FileUtil, Forms, Controls, Graphics, Dialogs, ComCtrls,
   Windows, Menus, ExtCtrls, ActnList, LCLType, types, Clipbrd,
   StdCtrls, Synaser,IniFiles,windirs,
-  intfgraphics,graphtype,fpImage,
+  intfgraphics,graphtype,fpImage, fgl, LazUTF8, LConvEncoding,
   SpCam_Functions;
 
 const
@@ -23,6 +23,13 @@ type
     ImageType:string;
     ImageSize:integer;
   end;
+
+  TDnnInfo = class
+    Caption:string;
+    Value:double;
+  end;
+
+  TDnnInfoList = specialize TFPGObjectList<TDnnInfo>;
 
 { TFrmMain }
   TFrmMain = class(TForm)
@@ -91,6 +98,7 @@ type
     FTransferCmd:string;
     FIni:TIniFile;
     FConnect:boolean;
+    FDnnInfoList:TDnnInfoList;
 
     procedure CalcFPS();
 
@@ -121,6 +129,8 @@ type
 
     procedure Debug(s:string);
     procedure Error(s:string);
+
+    procedure DNN_Init();
   end;
 
 
@@ -142,7 +152,8 @@ const
   BH=240;
 
 procedure TFrmMain.FormCreate(Sender: TObject);
-var s:string;
+var
+  s:string;
 begin
   ImagePaint.Align:=alClient;
   SpreMemo.Align:=alClient;
@@ -154,26 +165,60 @@ begin
 
   FConnect := false;
   FPrevEndDetect:=false;
-  s:= MyDocDir+ ExtractFileName(ChangeFileExt(ParamStr(0),'.ini'));
+  //s:= MyDocDir+ ExtractFileName(ChangeFileExt(ParamStr(0),'.ini'));
+  s:= ChangeFileExt(ParamStr(0),'.ini');
   FIni := TINIFile.Create(s);
+  FDnnInfoList:= TDnnInfoList.Create;
+
 end;
 
 procedure TFrmMain.FormDestroy(Sender: TObject);
 begin
   FIni.Free;
   FBmp.Free;
+  FDnnInfoList.Free;
   if Assigned(FSer) then
     FreeAndNil(FSer);
 end;
 
 procedure TFrmMain.FormShow(Sender: TObject);
 begin
+  DNN_Init();
   LblDnn.Caption:='Init';
   LblDnn.Visible:=false;
   DisplayConnectInfo();
   EdtFileName.Text:= FIni.ReadString('File','Name','ABC');
   EdtSeqNo.Text:= FIni.ReadString('File','SeqNo','1');
 end;
+
+procedure TFrmMain.DNN_Init();
+var
+  s:string;
+  s0:RawByteString;
+  i:integer;
+  v:double;
+  di:TDnnInfo;
+begin
+  // read Dnn descriptions from inifile;
+
+  Debug('DNN_Init()');
+  i:=0;
+  while true do begin
+    s0:=FIni.ReadString('DNN','CAPTION_'+IntToStr(i),'');
+    // Iniファイルの文字列記述　ANSIをUTF8に変換
+    s:= WinCPToUTF8(s0);
+    v:=FIni.ReadFloat('DNN','VALUE_'+IntToStr(i),-1);
+    if v<0 then break;
+    Debug( Format('DNN[%d] Caption=%s, Value=%.3f',[i,s,v]));
+    di:=TDnnInfo.Create;
+    di.Caption:=s;
+    di.Value:=v;
+    FDnnInfoList.Add(di);
+    inc(i);
+  end;
+end;
+
+
 
 procedure TFrmMain.MenuItem4Click(Sender: TObject);
 begin
@@ -452,31 +497,37 @@ end;
 procedure TFrmMain.GetDnnResult(s:string);
 var
   sa:TStringArray;
-  i:integer;
+  i,j:integer;
   v:array[0..3] of double;
+  detect:boolean;
 begin
   sa:=s.Split([':','=',',']);
-  //[0] DNN Output
-  //[1] INDEX(0)
-  //[2] VALUE
+  //DNN Output : 0 = value0, 1=value1, 2=value2 ...
+
   for i:=Low(sa) to High(sa) do begin
     SpreMemo.Lines.Add(IntToStr(i)+':'+sa[i]);
   end;
+
+  detect:=false;
   if High(sa)>=8 then
   begin
-    for i:=0 to 3 do
+    for i:=0 to FDnnInfoList.Count-1 do
     begin
       v[i]:= StrToFloatDef(sa[2+i*2],0.0);
+
+      for j:=0 to FDnnInfoList.Count-1 do
+      begin
+        if v[i]> FDnnInfoList[j].Value then begin
+          lblDnn.Caption:= FDnnInfoList[j].Caption;
+          detect:=true;
+          break;
+        end;
+      end;
+
+      if detect then break;
     end;
-    if v[0]>0.8 then
-      LblDnn.Caption:='いない'
-    else if v[1]>0.9 then
-      LblDnn.Caption:='ぴよ'
-    else if v[2]>0.9 then
-      LblDnn.Caption:='すみっこ'
-    else if v[3]>0.9 then
-      LblDnn.Caption:='オリーブ'
-    else
+
+    if not detect then
       LblDnn.Caption:='??';
   end;
 end;
