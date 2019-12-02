@@ -76,7 +76,6 @@ object FrmMain: TFrmMain
         Lines.Strings = (
           'Spresense Debug Output'
         )
-        OnChange = SpreMemoChange
         ParentFont = False
         ScrollBars = ssAutoBoth
         TabOrder = 1

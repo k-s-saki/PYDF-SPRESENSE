@@ -6,9 +6,9 @@ interface
 
 uses
   Classes, SysUtils, FileUtil, Forms, Controls, Graphics, Dialogs, ComCtrls,
-  Windows, Menus, ExtCtrls, ActnList, LCLType, types, Clipbrd,
+  Windows, Menus, ExtCtrls, LCLType, types, Clipbrd,
   StdCtrls, Synaser,IniFiles,windirs,
-  intfgraphics,graphtype,fpImage, fgl, LazUTF8, LConvEncoding,
+  graphtype,fpImage, fgl, LazUTF8, LConvEncoding,
   SpCam_Functions;
 
 const
@@ -99,7 +99,6 @@ type
     procedure MenuItem_ExitClick(Sender: TObject);
     procedure ImagePaint_Paint(Sender: TObject);
     procedure MenuItem_OpenIniFileClick(Sender: TObject);
-    procedure SpreMemoChange(Sender: TObject);
     procedure Timer1Timer(Sender: TObject);
   private
     { private declarations }
@@ -250,12 +249,6 @@ begin
   WinExec(PChar('notepad.exe "'+GetIniFileName()+'"'),SW_SHOWNORMAL);
   ShowMessage('Iniファイルは文字コードANSIで保存してください。変更後の反映にはアプリケーションの再起動が必要です。');
 end;
-
-procedure TFrmMain.SpreMemoChange(Sender: TObject);
-begin
-
-end;
-
 
 procedure TFrmMain.MenuItem_ExitClick(Sender: TObject);
 begin

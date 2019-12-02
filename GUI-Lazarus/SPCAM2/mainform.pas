@@ -61,6 +61,7 @@ type
     Label7: TLabel;
     LblDnn: TLabel;
     MainMenu1: TMainMenu;
+    MenuItem_ShowOperationPanel: TMenuItem;
     MenuItem_ShowDebugPanel: TMenuItem;
     MenuItem_View: TMenuItem;
     MenuItem_OpenIniFile: TMenuItem;
@@ -99,6 +100,7 @@ type
     procedure MenuItem_ExitClick(Sender: TObject);
     procedure ImagePaint_Paint(Sender: TObject);
     procedure MenuItem_OpenIniFileClick(Sender: TObject);
+    procedure MenuItem_ShowOperationPanelClick(Sender: TObject);
     procedure Timer1Timer(Sender: TObject);
   private
     { private declarations }
@@ -211,12 +213,6 @@ begin
   EdtSeqNo.Text:= FIni.ReadString('File','SeqNo','1');
 end;
 
-procedure TFrmMain.MenuItem_ShowDebugPanelClick(Sender: TObject);
-begin
-  MenuItem_ShowDebugPanel.Checked:=not MenuItem_ShowDebugPanel.Checked;
-  PnlBottom.Visible:= MenuItem_ShowDebugPanel.Checked;
-end;
-
 procedure TFrmMain.DNN_Init();
 var
   s:string;
@@ -248,6 +244,19 @@ procedure TFrmMain.MenuItem_OpenIniFileClick(Sender: TObject);
 begin
   WinExec(PChar('notepad.exe "'+GetIniFileName()+'"'),SW_SHOWNORMAL);
   ShowMessage('Iniファイルは文字コードANSIで保存してください。変更後の反映にはアプリケーションの再起動が必要です。');
+end;
+
+procedure TFrmMain.MenuItem_ShowDebugPanelClick(Sender: TObject);
+begin
+  MenuItem_ShowDebugPanel.Checked:=not MenuItem_ShowDebugPanel.Checked;
+  PnlBottom.Visible:= MenuItem_ShowDebugPanel.Checked;
+end;
+
+
+procedure TFrmMain.MenuItem_ShowOperationPanelClick(Sender: TObject);
+begin
+  MenuItem_ShowOperationPanel.Checked:=not MenuItem_ShowOperationPanel.Checked;
+  PnlOperation.Visible:= MenuItem_ShowOperationPanel.Checked;
 end;
 
 procedure TFrmMain.MenuItem_ExitClick(Sender: TObject);
