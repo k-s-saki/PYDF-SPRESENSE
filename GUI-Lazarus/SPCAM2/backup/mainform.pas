@@ -14,8 +14,11 @@ uses
 const
   SEC:TDateTime  =0;
   MSEC:TDateTime =0;
-  RecvEnd:string = #10;
+  RecvEnd:ansistring = #10;
   MyDocDir:string ='';
+
+  Timeout_Image= 1000; //  serial function timeout in milliseconds
+  Timeout_Str = 100;   //  serial function timeout in milliseconds
 
 type
   TImageTags= record
@@ -34,18 +37,19 @@ type
 { TFrmMain }
   TFrmMain = class(TForm)
     BtnConnect: TButton;
+    BtnDisConnect: TButton;
     BtnDNN_Start: TButton;
     BtnStop: TButton;
     BtnImagePgmFile: TButton;
     BtnStart: TButton;
     BtnImageJpegFile: TButton;
     BtnDNN_Stop: TButton;
-    Button1: TButton;
     BtnSetFileFolder: TButton;
     BtnOpenFileFolder: TButton;
-    Button2: TButton;
-    CbDebugPanel: TCheckBox;
+    BtnFileTransfer: TButton;
+    BtnTest: TButton;
     DebugMemo: TMemo;
+    EdtTest: TEdit;
     EdtFileName: TEdit;
     EdtSeqNo: TEdit;
     Label1: TLabel;
@@ -54,9 +58,13 @@ type
     Label4: TLabel;
     Label5: TLabel;
     Label6: TLabel;
+    Label7: TLabel;
     LblDnn: TLabel;
     MainMenu1: TMainMenu;
+    MenuItem_ShowDebugPanel: TMenuItem;
+    MenuItem_View: TMenuItem;
     MenuItem_OpenIniFile: TMenuItem;
+    OpenDialog: TOpenDialog;
     PnlBottom: TPanel;
     PnlMemo: TPanel;
     MemoSplit: TSplitter;
@@ -75,21 +83,23 @@ type
     procedure BtnConnect_Click(Sender: TObject);
     procedure BtnDNN_StartClick(Sender: TObject);
     procedure BtnDNN_StopClick(Sender: TObject);
+    procedure BtnFileTransferClick(Sender: TObject);
     procedure BtnImagePgmFileClick(Sender: TObject);
     procedure BtnShot_Click(Sender: TObject);
     procedure BtnS_Click(Sender: TObject);
     procedure BtnE_Click(Sender: TObject);
-    procedure Button1Click(Sender: TObject);
+    procedure BtnTestClick(Sender: TObject);
     procedure BtnSetFileFolderClick(Sender: TObject);
     procedure BtnOpenFileFolderClick(Sender: TObject);
-    procedure CbDebugPanelChange(Sender: TObject);
     procedure FormClose(Sender: TObject; var CloseAction: TCloseAction);
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure FormShow(Sender: TObject);
+    procedure MenuItem_ShowDebugPanelClick(Sender: TObject);
     procedure MenuItem_ExitClick(Sender: TObject);
     procedure ImagePaint_Paint(Sender: TObject);
     procedure MenuItem_OpenIniFileClick(Sender: TObject);
+    procedure SpreMemoChange(Sender: TObject);
     procedure Timer1Timer(Sender: TObject);
   private
     { private declarations }
@@ -97,7 +107,6 @@ type
     FSer: TBlockSerial;
     FPrevDrawDt:TDateTime;
     FPrevEndDetect:boolean;
-    FTransferCmd:string;
     FIni:TIniFile;
     FConnect:boolean;
     FDnnInfoList:TDnnInfoList;
@@ -203,6 +212,12 @@ begin
   EdtSeqNo.Text:= FIni.ReadString('File','SeqNo','1');
 end;
 
+procedure TFrmMain.MenuItem_ShowDebugPanelClick(Sender: TObject);
+begin
+  MenuItem_ShowDebugPanel.Checked:=not MenuItem_ShowDebugPanel.Checked;
+  PnlBottom.Visible:= MenuItem_ShowDebugPanel.Checked;
+end;
+
 procedure TFrmMain.DNN_Init();
 var
   s:string;
@@ -234,6 +249,11 @@ procedure TFrmMain.MenuItem_OpenIniFileClick(Sender: TObject);
 begin
   WinExec(PChar('notepad.exe "'+GetIniFileName()+'"'),SW_SHOWNORMAL);
   ShowMessage('Iniファイルは文字コードANSIで保存してください。変更後の反映にはアプリケーションの再起動が必要です。');
+end;
+
+procedure TFrmMain.SpreMemoChange(Sender: TObject);
+begin
+
 end;
 
 
@@ -354,12 +374,16 @@ var
   frm:TFrmConnect;
   br:integer;
 begin
+  // Disconnect
   FConnect:=false;
   if FSer<>nil then begin
     FSer.Free;
     FSer:=nil;
+    Debug('Disconnected.');
   end;
+  if Sender= BtnDisConnect then exit;
 
+  // Connect
   frm:=TFrmConnect.Create(nil);
   try
 
@@ -403,7 +427,6 @@ procedure TFrmMain.BtnDNN_StartClick(Sender: TObject);
 begin
   LblDNN.Visible:=true;
   if FSer=nil then exit;
-  //FTransferCmd:='D';
   Debug('Start DNN Image Recognition');
   FSer.SendString('D');
 end;
@@ -411,9 +434,39 @@ end;
 procedure TFrmMain.BtnDNN_StopClick(Sender: TObject);
 begin
   if FSer=nil then exit;
-  //FTransferCmd:='d';
   Debug('Stop DNN Image Recognition ');
   FSer.SendString('d');
+end;
+
+procedure TFrmMain.BtnFileTransferClick(Sender: TObject);
+var
+  fn_sd:AnsiString;
+  fn, s_size:string;
+  st:TFileStream;
+begin
+
+  // 注:　このコードでは1KB未満程度のファイルしか送れません。（シリアル経由でspresenseのSDに書き込み）
+
+  if OpenDialog.Execute() then begin
+    fn:=OpenDialog.FileName;
+    fn_sd:=LowerCase(Utf8ToSys( ExtractFileName(fn) ));
+
+    Debug('SendFile = '+fn);
+    Debug('SD name='+fn_sd);
+
+    FSer.SendString('F'); // FileReceive Command
+    FSer.SendString( fn_sd+#13#10);
+    st:= TFileStream.Create( fn, fmOpenRead );
+    try
+      Debug('stream.size='+IntToStr(st.Size));
+      s_size:=IntToStr( st.Size );
+      FSer.SendString( s_size+#13#10 );
+      FSer.SendStreamRaw( st );
+      FSer.SendString('END FILE TRANSFER'+#13#10);
+    finally
+      st.Free;
+    end;
+  end;
 end;
 
 procedure TFrmMain.BtnImagePgmFileClick(Sender: TObject);
@@ -437,10 +490,9 @@ procedure TFrmMain.BtnS_Click(Sender: TObject);
 begin
   LblDNN.Visible:=false;
   if FSer=nil then exit;
-  FTransferCmd:='C';
   FBmp.PixelFormat:=pf24bit;
-  Debug('StartStream() :'+FTransferCmd);
-  FSer.SendString(FTransferCmd);
+  Debug('StartStream() :C');
+  FSer.SendString('C');
 
   FPrevDrawDt:=0;
 end;
@@ -453,13 +505,12 @@ begin
   FSer.SendString('E');
 end;
 
-procedure TFrmMain.Button1Click(Sender: TObject);
+procedure TFrmMain.BtnTestClick(Sender: TObject);
 begin
   if FSer=nil then exit;
 
-  Debug('Test"."');
-  FSer.SendString('.');
-
+  Debug('Test:'+EdtTest.Text);
+  FSer.SendString(EdtTest.Text);
 end;
 
 procedure TFrmMain.BtnSetFileFolderClick(Sender: TObject);
@@ -480,11 +531,6 @@ begin
   WinExec(PChar('explorer.exe /e, '+s),SW_SHOWNORMAL);
 end;
 
-procedure TFrmMain.CbDebugPanelChange(Sender: TObject);
-begin
-  PnlBottom.Visible:= CbDebugPanel.Checked;
-end;
-
 procedure TFrmMain.FormClose(Sender: TObject; var CloseAction: TCloseAction);
 begin
   if CloseAction = caFree then
@@ -497,7 +543,11 @@ end;
 function TFrmMain.CheckDebugMsg(s:string):boolean;
 begin
   result:=false;
-  if Length(s)=0 then exit;
+
+  if Length(s)=0 then begin
+    SpreMemo.Lines.Add('Zero string');
+    exit;
+  end;
 
   if s[1]='@' then begin
     result:=true;
@@ -529,12 +579,6 @@ begin
   begin
     v[i]:= StrToFloatDef(sa[2+i*2],0.0);
   end;
-
-  (*
-  for i:=Low(sa) to High(sa) do begin
-    SpreMemo.Lines.Add(IntToStr(i)+':'+sa[i]);
-  end;
-  *)
 
   detect:=false;
 
@@ -573,11 +617,20 @@ end;
 function TFrmMain.Serial_IsError(aSerial:TBlockSerial; aDebugStr:string):boolean;
 begin
   if aSerial.LastError<>0 then begin
-    Error(aDebugStr+':'+aSerial.LastErrorDesc);
+    //Error(aDebugStr+':'+aSerial.LastErrorDesc);
     result:=true;
   end
   else
     result:=false;
+end;
+
+function StrDump(s:string):string;
+var i:integer;
+begin
+  result:='';
+  for i:=1 to Length(s) do begin
+    result:=result + '$'+IntToHex( ord(s[i]),2 );
+  end;
 end;
 
 procedure TFrmMain.Timer1Timer(Sender: TObject);
@@ -587,15 +640,24 @@ begin
   if not Assigned(FSer) then
     exit;
 
+(*
+  // CanReadは不要と思われる
   while FSer.CanRead(10) do
   begin
-
-    //1行取得
+    //1行取得(10msec)
     if Serial_RecvStr(FSer,10, s,'FirstRead') = false then
       exit;
+*)
+  while Serial_RecvStr(FSer,10, s,'FirstRead') do begin
+    Debug('receive = '+s);
+    Debug('1= '+StrDump(s));
+    s:= Trim(s);
+    Debug('2= '+StrDump(s));
 
-    if Length(s)=0 then
+    if Length(s)=0 then begin
+      Debug('zero string');
       continue;
+    end;
 
     if Length(s)>64 then begin
       //バッファ異常のためバッファを一旦破棄
@@ -630,7 +692,7 @@ begin
   result:=false;
 
   //FrameNo:
-  if Serial_RecvStr(aSerial,100, s,'FrameNo') = false then begin
+  if Serial_RecvStr(aSerial,Timeout_Str, s,'FrameNo') = false then begin
     aSerial.Purge;
     exit;
   end;
@@ -638,7 +700,7 @@ begin
   oImageTags.FrameNo := GetIntegerProperty(s);
 
   //ImageType
-  if Serial_RecvStr(aSerial,100, s,'ImageType') = false then begin
+  if Serial_RecvStr(aSerial,Timeout_Str, s,'ImageType') = false then begin
     aSerial.Purge();
     exit;
   end;
@@ -646,7 +708,7 @@ begin
   oImageTags.ImageType:= GetStringProperty(s);
 
   //ImageSize
-  if Serial_RecvStr(aSerial,100, s,'ImageSize') = false then begin
+  if Serial_RecvStr(aSerial,Timeout_Str, s,'ImageSize') = false then begin
     aSerial.Purge();
     exit;
   end;
@@ -673,7 +735,8 @@ begin
     MemStream:=TMemoryStream.Create;
     try
       try
-        aSerial.RecvStreamSize(MemStream,1000, imgTags.ImageSize);
+        aSerial.RecvStreamSize(MemStream, Timeout_Image, imgTags.ImageSize);
+
         if Serial_IsError(aSerial,'Serial_StreamImage') then begin
           aSerial.Purge();
           exit;
@@ -723,7 +786,8 @@ begin
     fs:=TFileStream.Create( fn,fmOpenWrite or fmCreate );
     try
 
-      aSerial.RecvStreamSize(MemStream,1000, imgTags.ImageSize);
+      aSerial.RecvStreamSize(MemStream,Timeout_Image, imgTags.ImageSize);
+
       if Serial_IsError(aSerial,'Serial_FileImage') then begin
         aSerial.Purge();
         exit;
@@ -733,17 +797,16 @@ begin
       fs.CopyFrom(MemStream, MemStream.Size);
       edtSeqNo.Text:= IntToStr( StrToIntDef(edtSeqNo.Text,0) +1 );
       Debug('Save Success , NextSeqNo='+edtSeqNo.Text);
-      fs.Free;
 
       if imgTags.ImageType='PGM' then
       begin
-        // PGMファイルをPNGファイルに変換
+        // PGMファイルをBMPファイルに変換
         ConvertGrayPgmToBmp(fn);
       end;
 
     finally
       MemStream.Free;
-      //fs.Free;
+      fs.Free;
     end;
   end;
 end;

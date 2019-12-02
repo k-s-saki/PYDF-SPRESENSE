@@ -8,7 +8,7 @@
 DNNRT* pDNNRT = NULL;      // DNNRTオブジェクト
 
 #include <SDHCI.h>  //SDカードを使う--＞使いません
-SDClass  theSD; // SDカードは自分で宣言する。　一方、theCameraは定義されているので不要
+SDClass  SD; // SDカードは自分で宣言する。　一方、theCameraは定義されているので不要
 
 
 //Typedef.---------------------------------------------------
@@ -16,7 +16,7 @@ SDClass  theSD; // SDカードは自分で宣言する。　一方、theCamera�
 /* USB通信 */
 //PC側シリアルボーレートと同じ値に
 #define BAUDRATE       2000000
-const String EOL="\n";
+const String EOL="\r\n"; //"\n";
 
 /* カメラモード */
 enum CameraMode {
@@ -27,6 +27,9 @@ enum CameraMode {
   cmPgmFile              // Shot PgmFile 
 };
 const int MAX_FRAME_COUNT= 1000;
+const int MAX_READ_BYTES = 100; 
+// 1KB(1024)だとシリアルは読める  // 2KBだと up_hardfault: PANIC!!! Hard fault: 40000000 エラーになる
+// 1KBでSDに書こうとするとwrite()で0が帰ってくる
 
 /* 表示LED */
 const int LED_SERIAL=LED0;  //シリアルが機能中
@@ -67,6 +70,10 @@ void Debug(String s){
   s=String("@")+s+String(EOL);
   Serial.print(s);
   Serial.flush();
+/*
+  Serial.print("@"+EOL);
+  Serial.flush();
+*/
   digitalWrite(LED_SERIAL, LOW);
 }
 
@@ -86,14 +93,30 @@ void sendBinaryData(uint8_t* pData,int nDataSize){
 }
 
 void recvBinaryDataToFile(File& aFile, int nDataSize){
-  char buff[1024];
+  // 注：使っていない
+  Debug("recvBinaryDataToFile datasize="+String(nDataSize));
+  char buff[MAX_READ_BYTES+1];
   int readed=0;
   for(int readed=0; readed< nDataSize; ){
-    int toReadBytes= min(1024, nDataSize - readed );
+    
+    int toReadBytes= min(MAX_READ_BYTES, nDataSize - readed );
+    Debug("readed="+String(readed)+" toReadBytes="+String(toReadBytes) );
+
     int n = Serial.readBytes(buff,toReadBytes);
+    Debug("serial readed="+String(n));
+    if (n==0){
+      Debug(s);
+      Debug("zero bytes readed.");
+      return;
+    }
+   
     readed= readed + n;
-    aFile.write(buff,n);
+    int nWriteBytes = aFile.write(buff,n);
+    Debug(" wrote bytes to file ="+String(nWriteBytes));
   }
+
+  Debug("Success file Receive");
+  Debug(s);  
 }
 
 
@@ -177,7 +200,7 @@ char checkSerialCommand()
       }
       
       CmdDNN(true);
-      responseMsg("OK");
+      responseMsg("OK:DNN Start");
     }
     else if (cmd=='d'){
       Debug("DNN End Command");
@@ -186,12 +209,42 @@ char checkSerialCommand()
       }
       
       CmdDNN(false);
-      responseMsg("OK");
+      responseMsg("OK:DNN End");
+    }
+    else if (cmd=='U'){
+      Debug("USBMSC Start Command");
+      
+      /* Initialize SD */
+      while (!SD.begin()) {
+        ; /* wait until SD card is mounted. */
+      }
+      
+      /* Start USB MSC */
+      if (SD.beginUsbMsc()) {
+        Debug("USB MSC Failure!");
+      } else {
+        Debug("*** USB MSC Prepared! ***");
+      }
+
+      responseMsg("OK:USBMSC Start");
+    }
+    else if (cmd=='u'){
+      Debug("USBMSC End Command");
+      SD.endUsbMsc();
+      responseMsg("OK:USBMSC End");
     }
     else if (cmd=='F'){
-      Debug("File Receive Command"){
-        CmdFileReceive();
-      }
+      Debug("File Receive Command");
+      CmdFileReceive();
+    }
+    else if (cmd=='*'){
+      Debug("Star Command");
+      CmdStar();
+      responseMsg("OK:Star");      
+    }
+    else if (cmd=='.'){
+      Debug("Ping Command");
+      responseMsg("OK:Ping");      
     }
     else{
       Debug( "Undefined Command :"+String(cmd));
@@ -203,13 +256,73 @@ char checkSerialCommand()
 }
 
 void CmdFileReceive(){
+  
+  // 注：1KBを超えるファイルを指定すると、Serialで取りこぼすような感じの動作になる
+  
   String file_name=Serial.readStringUntil('\n');
+  //file_name.replace("\r","");
+  file_name.trim();
+
   Debug("CmdFileReceive filename="+file_name);
+
+  Debug("Wait for SD.begin()");
+  while (!SD.begin()) {
+    ; /* wait until SD card is mounted. */
+  }  
+  Debug("confirm SD is mounted.");
+
   String s_size=Serial.readStringUntil('\n');
   Debug("filesize="+s_size);
   File f;
-  f= theSD.open(file_name);
-  recvBinaryDataToFile( f, s_size.toInt());
+  f= SD.open(file_name,FILE_WRITE);
+
+  //recvBinaryDataToFile( f, s_size.toInt());
+  int nDataSize = s_size.toInt();
+  char buff[MAX_READ_BYTES+1];
+
+  String s;
+  int readed=0;
+  for(int readed=0; readed< nDataSize; ){
+    
+    int toReadBytes= min(MAX_READ_BYTES, nDataSize - readed );
+    Debug("readed="+String(readed)+" toReadBytes="+String(toReadBytes));
+
+    int n = Serial.readBytes(buff,toReadBytes);
+    Debug( "serial readed="+String(n) );
+    if (n==0){
+      Debug(s);
+      Debug("zero bytes readed.");
+      return;
+    }
+   
+    readed= readed + n;
+    
+    Debug("f.write buff,"+String(n) );
+    int nWriteBytes = f.write(buff,n);
+    Debug("wrote bytes to file ="+String(nWriteBytes) );
+  }
+
+  f.close();
+  String s_end=Serial.readStringUntil('\n');
+  Debug("Endmark=" + s_end);
+}
+
+void CmdStar(){
+  Debug("CmdStar()");
+  Debug("Wait for SD.begin()");
+  while (!SD.begin()) {
+    ; // wait until SD card is mounted. 
+  }
+  Debug("confirm SD is mounted.");
+
+  File f;
+  f= SD.open("123",FILE_WRITE);
+
+  char buff[10];
+
+  int nWriteBytes = f.write(buff,10);
+  Debug(" wrote bytes to file ="+String(nWriteBytes) );
+
   f.close();
 }
 

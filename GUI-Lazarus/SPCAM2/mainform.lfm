@@ -61,7 +61,7 @@ object FrmMain: TFrmMain
         Width = 408
         Align = alLeft
         Lines.Strings = (
-          'Console Window'
+          'PC Debug Window'
         )
         ParentFont = False
         ScrollBars = ssAutoBoth
@@ -74,7 +74,7 @@ object FrmMain: TFrmMain
         Top = 80
         Width = 150
         Lines.Strings = (
-          'SpreMemo'
+          'Spresense Debug Output'
         )
         ParentFont = False
         ScrollBars = ssAutoBoth
@@ -90,14 +90,14 @@ object FrmMain: TFrmMain
     end
   end
   object PnlOperation: TPanel
-    Left = 845
+    Left = 816
     Height = 457
     Top = 0
-    Width = 170
+    Width = 199
     Align = alRight
     BevelOuter = bvSpace
     ClientHeight = 457
-    ClientWidth = 170
+    ClientWidth = 199
     Color = clSkyBlue
     ParentColor = False
     ParentFont = False
@@ -106,7 +106,7 @@ object FrmMain: TFrmMain
       Left = 7
       Height = 25
       Top = 24
-      Width = 147
+      Width = 87
       Caption = 'Connect'
       OnClick = BtnConnect_Click
       ParentFont = False
@@ -116,51 +116,41 @@ object FrmMain: TFrmMain
       Left = 24
       Height = 25
       Top = 75
-      Width = 131
+      Width = 73
       Caption = 'Start'
       OnClick = BtnS_Click
       ParentFont = False
       TabOrder = 1
     end
     object BtnStop: TButton
-      Left = 24
+      Left = 96
       Height = 25
-      Top = 99
-      Width = 131
+      Top = 75
+      Width = 72
       Caption = 'Stop'
       OnClick = BtnE_Click
       ParentFont = False
       TabOrder = 2
     end
     object BtnImageJpegFile: TButton
-      Left = 23
+      Left = 21
       Height = 25
-      Top = 224
-      Width = 131
-      Caption = 'Image (QVGA JPEG)'
+      Top = 128
+      Width = 76
+      Caption = 'QVGA Color'
       OnClick = BtnShot_Click
       ParentFont = False
       TabOrder = 3
     end
     object BtnImagePgmFile: TButton
-      Left = 23
+      Left = 93
       Height = 25
-      Top = 248
-      Width = 131
-      Caption = 'Image (28x28 PGM) '
+      Top = 128
+      Width = 75
+      Caption = '28x28 Mono'
       OnClick = BtnImagePgmFileClick
       ParentFont = False
       TabOrder = 4
-    end
-    object Button1: TButton
-      Left = 837
-      Height = 25
-      Top = 8
-      Width = 75
-      Caption = 'Button1'
-      OnClick = Button1Click
-      ParentFont = False
-      TabOrder = 5
     end
     object Label1: TLabel
       Left = 24
@@ -172,9 +162,9 @@ object FrmMain: TFrmMain
       ParentFont = False
     end
     object Label2: TLabel
-      Left = 23
+      Left = 21
       Height = 15
-      Top = 208
+      Top = 112
       Width = 92
       Caption = 'Data File Transfer '
       ParentColor = False
@@ -189,111 +179,136 @@ object FrmMain: TFrmMain
       ParentColor = False
       ParentFont = False
     end
-    object CbDebugPanel: TCheckBox
-      Left = 64
-      Height = 19
-      Top = 448
-      Width = 87
-      Caption = 'Debug Panel'
-      Checked = True
-      OnChange = CbDebugPanelChange
-      ParentFont = False
-      State = cbChecked
-      TabOrder = 6
-    end
     object BtnSetFileFolder: TButton
-      Left = 7
+      Left = 21
       Height = 25
-      Top = 304
-      Width = 147
-      Caption = 'Set File Folder'
+      Top = 184
+      Width = 75
+      Caption = 'Set'
       OnClick = BtnSetFileFolderClick
       ParentFont = False
-      TabOrder = 7
+      TabOrder = 5
     end
     object BtnOpenFileFolder: TButton
-      Left = 7
+      Left = 96
       Height = 25
-      Top = 328
-      Width = 147
-      Caption = 'Open File Folder'
+      Top = 184
+      Width = 59
+      Caption = 'Open'
       OnClick = BtnOpenFileFolderClick
       ParentFont = False
-      TabOrder = 8
+      TabOrder = 6
     end
     object Label4: TLabel
-      Left = 7
+      Left = 21
       Height = 15
-      Top = 288
-      Width = 118
-      Caption = 'Data File Management'
+      Top = 160
+      Width = 81
+      Caption = 'Data File Folder'
       ParentColor = False
       ParentFont = False
     end
     object Label5: TLabel
-      Left = 7
+      Left = 16
       Height = 15
-      Top = 360
-      Width = 119
-      Caption = 'Data FileName+SeqNo'
+      Top = 216
+      Width = 149
+      Caption = 'Data FileName+Seq Number'
       ParentColor = False
       ParentFont = False
     end
     object EdtFileName: TEdit
-      Left = 7
+      Left = 29
       Height = 23
-      Top = 381
+      Top = 232
       Width = 82
       ParentFont = False
-      TabOrder = 9
+      TabOrder = 7
       Text = 'EdtFileName'
     end
     object EdtSeqNo: TEdit
-      Left = 95
+      Left = 118
       Height = 23
-      Top = 381
+      Top = 232
       Width = 58
       ParentFont = False
-      TabOrder = 10
+      TabOrder = 8
       Text = 'EdtSeqNo'
     end
     object Label6: TLabel
-      Left = 24
+      Left = 21
       Height = 15
-      Top = 136
+      Top = 264
       Width = 128
       Caption = 'DNN Image Recognition'
       ParentColor = False
       ParentFont = False
     end
     object BtnDNN_Start: TButton
-      Left = 24
+      Left = 21
       Height = 25
-      Top = 155
-      Width = 131
+      Top = 280
+      Width = 73
       Caption = 'Start'
       OnClick = BtnDNN_StartClick
       ParentFont = False
-      TabOrder = 11
+      TabOrder = 9
     end
     object BtnDNN_Stop: TButton
-      Left = 24
+      Left = 93
       Height = 25
-      Top = 179
-      Width = 131
+      Top = 280
+      Width = 73
       Caption = 'Stop'
       OnClick = BtnDNN_StopClick
       ParentFont = False
+      TabOrder = 10
+    end
+    object BtnFileTransfer: TButton
+      Left = 24
+      Height = 25
+      Top = 312
+      Width = 146
+      Caption = 'DNNFileTransfer'
+      OnClick = BtnFileTransferClick
+      ParentFont = False
+      TabOrder = 11
+    end
+    object BtnTest: TButton
+      Left = 117
+      Height = 25
+      Top = 366
+      Width = 32
+      Caption = 'test'
+      OnClick = BtnTestClick
       TabOrder = 12
     end
-    object Button2: TButton
-      Left = 7
-      Height = 25
-      Top = 416
-      Width = 75
-      Caption = 'BtnFileTransfer'
-      ParentFont = False
+    object EdtTest: TEdit
+      Left = 29
+      Height = 23
+      Top = 368
+      Width = 80
       TabOrder = 13
+      Text = '.'
+    end
+    object Label7: TLabel
+      Left = 21
+      Height = 15
+      Top = 344
+      Width = 77
+      Caption = 'Test Command'
+      ParentColor = False
+      ParentFont = False
+    end
+    object BtnDisConnect: TButton
+      Left = 96
+      Height = 25
+      Top = 24
+      Width = 87
+      Caption = 'Disconnect'
+      OnClick = BtnConnect_Click
+      ParentFont = False
+      TabOrder = 14
     end
   end
   object StatusBar: TStatusBar
@@ -363,6 +378,14 @@ object FrmMain: TFrmMain
         OnClick = MenuItem_ExitClick
       end
     end
+    object MenuItem_View: TMenuItem
+      Caption = 'View'
+      object MenuItem_ShowDebugPanel: TMenuItem
+        Caption = 'ShowDebugPanel'
+        Checked = True
+        OnClick = MenuItem_ShowDebugPanelClick
+      end
+    end
   end
   object Timer1: TTimer
     Interval = 50
@@ -374,5 +397,9 @@ object FrmMain: TFrmMain
     Title = 'Select Directory'
     left = 184
     top = 400
+  end
+  object OpenDialog: TOpenDialog
+    left = 256
+    top = 408
   end
 end
