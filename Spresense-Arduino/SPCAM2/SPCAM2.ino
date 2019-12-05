@@ -3,11 +3,13 @@
 #include <stdio.h>  // sprintf に必要
 #include <Arduino.h>
 
+//#include <MP.h>  // マルチコア用
+
 #include "ge.h"     // ラスタオペレーション(SONYさまソース改造)
 #include <DNNRT.h>
-DNNRT* pDNNRT = NULL;      // DNNRTオブジェクト
+DNNRT dnnrt;      // DNNRTオブジェクト
 
-#include <SDHCI.h>  //SDカードを使う--＞使いません
+#include <SDHCI.h>  //SDカードを使う
 SDClass  SD; // SDカードは自分で宣言する。　一方、theCameraは定義されているので不要
 
 
@@ -92,6 +94,7 @@ void sendBinaryData(uint8_t* pData,int nDataSize){
   digitalWrite(LED_SERIAL, LOW);
 }
 
+/*
 void recvBinaryDataToFile(File& aFile, int nDataSize){
   // 注：使っていない
   Debug("recvBinaryDataToFile datasize="+String(nDataSize));
@@ -118,7 +121,7 @@ void recvBinaryDataToFile(File& aFile, int nDataSize){
   Debug("Success file Receive");
   Debug(s);  
 }
-
+*/
 
 bool StopCapture(){
   bool bRet=false;
@@ -357,7 +360,7 @@ void CamCB(CamImage img)
   unsigned int i;
 
   // ge.h / cpp はSONYさん製作のラスターオペレーション（画像の便利関数）関数がはいってました。（ジャンケンのサンプルから取得して一部改変）
-  // 決め打ちで228, 228 YUV から 28x28のメモリを作っているようですが、ビット操作ではなく、ハードウエアでやっている（ような）
+  // 決め打ちで228, 228 YUV から 28x28のメモリを作っているようですが、ビット操作ではなく、ハードウエアでやっているような？
   GE.shrink(img, img_mem);
 
   // 入力変数　dnn_in は1次元：要素数28x28で初期化されています。そこに画素データをセットします。
@@ -368,11 +371,13 @@ void CamCB(CamImage img)
   }
 
   // DNNRTにセットして・・
-  pDNNRT->inputVariable(dnn_in, 0);
-  // 推論して
-  pDNNRT->forward();
+  dnnrt.inputVariable(dnn_in, 0);
+  // 推論する
+  dnnrt.forward();
+
   // 結果の取得
-  DNNVariable dnn_out = pDNNRT->outputVariable(0);
+  DNNVariable dnn_out = dnnrt.outputVariable(0);
+  // dnn_outは配列になっているので、配列のサイズを取得しておく
   int out_size = dnn_out.size();
 
   String s="DNN Output:";
@@ -664,7 +669,7 @@ void startDNNRT()
   /* DNNRTを初期化 */
   digitalWrite(LED_DNN, HIGH);
   Debug("Loading DNN file");
-
+ 
   File nnbfile("sanbiki.nnb");
   if (!nnbfile) {
     Debug("DNN File Not found.");
@@ -672,7 +677,7 @@ void startDNNRT()
   }
 
   Debug("Initialize DNNRT");
-  int ret = pDNNRT->begin(nnbfile);
+  int ret = dnnrt.begin(nnbfile);
   if (ret < 0){
     Debug("DNNRT initialize error.");
   }
@@ -683,7 +688,7 @@ void endDNNRT()
 {
   Debug("Finalize DNNRT");
   if (isDNNReady){
-    pDNNRT->end();
+    dnnrt.end();
     isDNNReady=false;   
   }
 }
@@ -702,7 +707,6 @@ void setup()
   theCamera.begin();
   theCamera.setAutoWhiteBalanceMode(CAM_WHITE_BALANCE_DAYLIGHT);
 
-  pDNNRT = new DNNRT();
   // 全LED点灯
   digitalWrite(LED0, HIGH);
   digitalWrite(LED1, HIGH);
