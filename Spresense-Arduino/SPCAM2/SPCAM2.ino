@@ -1,17 +1,14 @@
 
-#include <Camera.h> // カメラを使う
+#include <Camera.h> // カメラを使う theCameraは定義されているので宣言不要
 #include <stdio.h>  // sprintf に必要
 #include <Arduino.h>
-
 //#include <MP.h>  // マルチコア用
 
-#include "ge.h"     // ラスタオペレーション(SONYさまソース改造)
 #include <DNNRT.h>
 DNNRT dnnrt;      // DNNRTオブジェクト
 
 #include <SDHCI.h>  //SDカードを使う
-SDClass  SD; // SDカードは自分で宣言する。　一方、theCameraは定義されているので不要
-
+SDClass  SD; // SDカードのオブジェクト
 
 //Typedef.---------------------------------------------------
 
@@ -68,14 +65,10 @@ void ErrorStop(String s){
 
 void Debug(String s){
   digitalWrite(LED_SERIAL, HIGH);
-  // DebugとしてPC側に送れる文字は ASCII文字、かつ、64文字以内とする （64文字以上の場合、PC側はシリアルバッファ異常と判断しPurgeする）
+  // 仕様：DebugとしてPC側に送れる文字は ASCII文字、かつ、64文字以内とする （64文字以上の場合、PC側はシリアルバッファ異常と判断しPurgeする）
   s=String("@")+s+String(EOL);
   Serial.print(s);
   Serial.flush();
-/*
-  Serial.print("@"+EOL);
-  Serial.flush();
-*/
   digitalWrite(LED_SERIAL, LOW);
 }
 
@@ -329,9 +322,9 @@ void CmdStar(){
   f.close();
 }
 
-uint8_t img_mem[28 * 28] __attribute__((aligned(16)));
+//uint8_t img_mem[28 * 28] __attribute__((aligned(16)));
 DNNVariable dnn_in(28 * 28);
-bool findPiyo = false;
+//bool findPiyo = false;
 
 #define WHITE_BALANCE_FRAMES 24
 int nframes=0;
@@ -361,13 +354,26 @@ void CamCB(CamImage img)
 
   // ge.h / cpp はSONYさん製作のラスターオペレーション（画像の便利関数）関数がはいってました。（ジャンケンのサンプルから取得して一部改変）
   // 決め打ちで228, 228 YUV から 28x28のメモリを作っているようですが、ビット操作ではなく、ハードウエアでやっているような？
-  GE.shrink(img, img_mem);
+  // GE.shrink(img, img_mem);
+
+  CamImage clip_image;
+  //(320x240) -Clip-> (224x224)-Resize-> (28x28)  // ByHW(=By Hardware accelarated function) 
+  CamErr err = img.clipAndResizeImageByHW(clip_image,48,8,271,231,28,28);
+  if (err) {
+    Debug("Error : clipAndResizeImageByHW().");
+    return;
+  }
+
+  if (!clip_image.isAvailable())
+    return;
 
   // 入力変数　dnn_in は1次元：要素数28x28で初期化されています。そこに画素データをセットします。
   pInputData = dnn_in.data();
+  uint16_t* buf = (uint16_t*)clip_image.getImgBuff();
   for (i = 0; i < 28 * 28; i++)
   {
-    pInputData[i] = (float)img_mem[i];
+    pInputData[i] = (float)(*buf);
+    buf++;
   }
 
   // DNNRTにセットして・・
@@ -399,12 +405,12 @@ void CamCB(CamImage img)
   img.convertPixFormat(CAM_IMAGE_PIX_FMT_GRAY);
   img_tag="GRAY";
 
-  uint8_t* buf = img.getImgBuff();
-  int bufSize = img.getImgSize();
-  SendImageProperty("ImageStream", 0, img_tag, bufSize);  
+  uint8_t* send_buf = img.getImgBuff();
+  int send_bufSize = img.getImgSize();
+  SendImageProperty("ImageStream", 0, img_tag, send_bufSize);  
 
   //データ送信  
-  sendBinaryData(buf,bufSize);
+  sendBinaryData(send_buf,send_bufSize);
   Debug("DNN Image File transfer end.");   
   
   
@@ -548,7 +554,7 @@ void CmdGrayPgm(){
   CamImage img = theCamera.takePicture();
   if (img.isAvailable()) {
     CamImage clip_image;
-    //(320x240) -Clip-> (224x224)-Resize-> (28x28)  // ByHW(=By Hardware accelarated function) 
+    //(320x240) -Clip(271-48+1,231-8+1) = (224x224)-Resize-> (28x28)  // ByHW(=By Hardware accelarated function) 
     CamErr err = img.clipAndResizeImageByHW(clip_image,48,8,271,231,28,28);
     if (err) {
       Debug("Error : clipAndResizeImageByHW().");

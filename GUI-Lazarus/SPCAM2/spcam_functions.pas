@@ -11,19 +11,29 @@ uses
   intfgraphics,graphtype,fpImage;
 
 
-procedure ConvertGrayPgmToBmp(aPgmFileName:string);
+procedure CreateBitmapFileFromGrayPgm(aPgmFileName:string);
+(* モノクロPGMをBMPに変換(ファイル) *)
 
-function ConvertRGB565(ms:TMemoryStream; bmp: Graphics.TBitmap):boolean;
-function ConvertGray(ms:TMemoryStream; bmp: Graphics.TBitmap):boolean;
-function ConvertJpeg(ms:TMemoryStream; bmp: Graphics.TBitmap):boolean;
+function ConvertStreamRGB565ToBitmap(ms:TMemoryStream; bmp: Graphics.TBitmap):boolean;
+(* RGB565のストリームを TBitmapオブジェクトに変換 *)
+
+function ConvertStreamGrayToBitmap(ms:TMemoryStream; bmp: Graphics.TBitmap):boolean;
+(* 輝度ストリームをTBitmapオブジェクトに変換 *)
+
+function ConvertStreamJpegToBitmap(ms:TMemoryStream; bmp: Graphics.TBitmap):boolean;
+(* JpegストリームをTBitmapオブジェクトに変換 *)
+
 
 function GetStringProperty(s:string):string;
+(* 文字列'a=b' の 　bの部分を文字列で返す *)
+
 function GetIntegerProperty(s:string):integer;
+(* 文字列'a=b' の 　bの部分を数値で返す *)
 
 
 implementation
 
-procedure ConvertGrayPgmToBmp(aPgmFileName:string);
+procedure CreateBitmapFileFromGrayPgm(aPgmFileName:string);
 var
   bmp_fn, ln:string;
   img: TLazIntfImage;
@@ -94,7 +104,7 @@ begin
 end;
 
 
-function ConvertRGB565(ms:TMemoryStream; bmp: Graphics.TBitmap):boolean;
+function ConvertStreamRGB565ToBitmap(ms:TMemoryStream; bmp: Graphics.TBitmap):boolean;
   type
     TFormat565 = packed record
       case Integer of
@@ -137,7 +147,7 @@ begin
   result:=true;
 end;
 
-function ConvertGray(ms:TMemoryStream; bmp: Graphics.TBitmap):boolean;
+function ConvertStreamGrayToBitmap(ms:TMemoryStream; bmp: Graphics.TBitmap):boolean;
 
 type
   TMemoryFormatGray = packed array [0 .. MaxInt] of Byte;
@@ -168,7 +178,7 @@ begin
   result:=true;
 end;
 
-function ConvertJpeg(ms:TMemoryStream; bmp: Graphics.TBitmap):boolean;
+function ConvertStreamJpegToBitmap(ms:TMemoryStream; bmp: Graphics.TBitmap):boolean;
 var jpg:TJPEGImage;
 begin
   jpg:=TJPEGImage.Create;

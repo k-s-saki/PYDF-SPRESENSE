@@ -11,19 +11,27 @@ uses
   intfgraphics,graphtype,fpImage;
 
 
-procedure ConvertGrayPgmToBmp(aPgmFileName:string);
+procedure CreateBitmapFileFromGrayPgm(aPgmFileName:string);
+(* モノクロPGMをBMPに変換(ファイル) *)
 
-function ConvertRGB565(ms:TMemoryStream; bmp: Graphics.TBitmap):boolean;
-function ConvertGray(ms:TMemoryStream; bmp: Graphics.TBitmap):boolean;
-function ConvertJpeg(ms:TMemoryStream; bmp: Graphics.TBitmap):boolean;
+function ConvertStreamRGB565ToBitmap(ms:TMemoryStream; bmp: Graphics.TBitmap):boolean;
+(* RGB565のストリームを TBitmapオブジェクトに変換 *)
+
+function ConvertStreamGrayToBitmap(ms:TMemoryStream; bmp: Graphics.TBitmap):boolean;
+(* 輝度ストリームをTBitmapオブジェクトに変換 *)
+
+function ConvertStreamJpegToBitmap(ms:TMemoryStream; bmp: Graphics.TBitmap):boolean;
+(* JpegストリームをTBitmapオブジェクトに変換 *)
+
 
 function GetStringProperty(s:string):string;
+
 function GetIntegerProperty(s:string):integer;
 
 
 implementation
 
-procedure ConvertGrayPgmToBmp(aPgmFileName:string);
+procedure CreateBitmapFileFromGrayPgm(aPgmFileName:string);
 var
   bmp_fn, ln:string;
   img: TLazIntfImage;
@@ -94,7 +102,7 @@ begin
 end;
 
 
-function ConvertRGB565(ms:TMemoryStream; bmp: Graphics.TBitmap):boolean;
+function ConvertStreamRGB565ToBitmap(ms:TMemoryStream; bmp: Graphics.TBitmap):boolean;
   type
     TFormat565 = packed record
       case Integer of
@@ -137,7 +145,7 @@ begin
   result:=true;
 end;
 
-function ConvertGray(ms:TMemoryStream; bmp: Graphics.TBitmap):boolean;
+function ConvertStreamGrayToBitmap(ms:TMemoryStream; bmp: Graphics.TBitmap):boolean;
 
 type
   TMemoryFormatGray = packed array [0 .. MaxInt] of Byte;
@@ -152,7 +160,7 @@ begin
   cnt:=0;
   bmp.Width:=320;
   bmp.Height:=240;
-  bmp.PixelFormat:=pfGray;
+  bmp.PixelFormat:=pf8bit;
 
   bmp.BeginUpdate();
   for LineIndex := 0 to bmp.Height - 1 do
@@ -168,7 +176,7 @@ begin
   result:=true;
 end;
 
-function ConvertJpeg(ms:TMemoryStream; bmp: Graphics.TBitmap):boolean;
+function ConvertStreamJpegToBitmap(ms:TMemoryStream; bmp: Graphics.TBitmap):boolean;
 var jpg:TJPEGImage;
 begin
   jpg:=TJPEGImage.Create;

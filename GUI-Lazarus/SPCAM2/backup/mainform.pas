@@ -2,6 +2,7 @@ unit MainForm;
 
 {$mode objfpc}{$H+}
 
+
 interface
 
 uses
@@ -61,6 +62,7 @@ type
     Label7: TLabel;
     LblDnn: TLabel;
     MainMenu1: TMainMenu;
+    MenuItem_ShowOperationPanel: TMenuItem;
     MenuItem_ShowDebugPanel: TMenuItem;
     MenuItem_View: TMenuItem;
     MenuItem_OpenIniFile: TMenuItem;
@@ -99,6 +101,7 @@ type
     procedure MenuItem_ExitClick(Sender: TObject);
     procedure ImagePaint_Paint(Sender: TObject);
     procedure MenuItem_OpenIniFileClick(Sender: TObject);
+    procedure MenuItem_ShowOperationPanelClick(Sender: TObject);
     procedure Timer1Timer(Sender: TObject);
   private
     { private declarations }
@@ -182,13 +185,18 @@ begin
 end;
 
 function TFrmMain.GetIniFileName(): string;
+var s:string;
 begin
   // iniファイルを MyDocumentに配置するとき
   // result:= MyDocDir+ ExtractFileName(ChangeFileExt(ParamStr(0),'.ini'));
 
-  // iniファイルを実行ファイルと同じ場所に配置するとき
-  result:= ChangeFileExt(ParamStr(0),'.ini');
+  // iniファイルを実行ファイルと同じ場所に配置するとき(書き込みできない場合がある)
+  //result:= ChangeFileExt(ParamStr(0),'.ini');
 
+  // iniファイルを C:\Users\user\AppData\Local\exe_name\
+  s:=GetAppConfigDir(False);
+  result:= s+ ExtractFileName(ChangeFileExt(ParamStr(0),'.ini'));
+  Debug(result);
 end;
 
 
@@ -209,12 +217,6 @@ begin
   DisplayConnectInfo();
   EdtFileName.Text:= FIni.ReadString('File','Name','ABC');
   EdtSeqNo.Text:= FIni.ReadString('File','SeqNo','1');
-end;
-
-procedure TFrmMain.MenuItem_ShowDebugPanelClick(Sender: TObject);
-begin
-  MenuItem_ShowDebugPanel.Checked:=not MenuItem_ShowDebugPanel.Checked;
-  PnlBottom.Visible:= MenuItem_ShowDebugPanel.Checked;
 end;
 
 procedure TFrmMain.DNN_Init();
@@ -248,6 +250,19 @@ procedure TFrmMain.MenuItem_OpenIniFileClick(Sender: TObject);
 begin
   WinExec(PChar('notepad.exe "'+GetIniFileName()+'"'),SW_SHOWNORMAL);
   ShowMessage('Iniファイルは文字コードANSIで保存してください。変更後の反映にはアプリケーションの再起動が必要です。');
+end;
+
+procedure TFrmMain.MenuItem_ShowDebugPanelClick(Sender: TObject);
+begin
+  MenuItem_ShowDebugPanel.Checked:=not MenuItem_ShowDebugPanel.Checked;
+  PnlBottom.Visible:= MenuItem_ShowDebugPanel.Checked;
+end;
+
+
+procedure TFrmMain.MenuItem_ShowOperationPanelClick(Sender: TObject);
+begin
+  MenuItem_ShowOperationPanel.Checked:=not MenuItem_ShowOperationPanel.Checked;
+  PnlOperation.Visible:= MenuItem_ShowOperationPanel.Checked;
 end;
 
 procedure TFrmMain.MenuItem_ExitClick(Sender: TObject);
@@ -737,11 +752,11 @@ begin
 
         MemStream.Position:=0;
         if imgTags.ImageType='JPEG' then
-          ConvertJpeg(MemStream,FBmp)
+          ConvertStreamJpegToBitmap(MemStream,FBmp)
         else if imgTags.ImageType='RGB565' then
-          ConvertRGB565(MemStream,FBmp)
+          ConvertStreamRGB565ToBitmap(MemStream,FBmp)
         else if imgTags.ImageType='GRAY' then
-          ConvertGray(MemStream,FBmp);
+          ConvertStreamGrayToBitmap(MemStream,FBmp);
 
         ImagePaint.Repaint;
         Debug('Draw Success');
@@ -794,7 +809,7 @@ begin
       if imgTags.ImageType='PGM' then
       begin
         // PGMファイルをBMPファイルに変換
-        ConvertGrayPgmToBmp(fn);
+        CreateBitmapFileFromGrayPgm(fn);
       end;
 
     finally

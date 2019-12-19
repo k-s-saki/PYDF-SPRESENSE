@@ -2,6 +2,7 @@ unit MainForm;
 
 {$mode objfpc}{$H+}
 
+
 interface
 
 uses
@@ -184,13 +185,18 @@ begin
 end;
 
 function TFrmMain.GetIniFileName(): string;
+var s:string;
 begin
   // iniファイルを MyDocumentに配置するとき
   // result:= MyDocDir+ ExtractFileName(ChangeFileExt(ParamStr(0),'.ini'));
 
-  // iniファイルを実行ファイルと同じ場所に配置するとき
-  result:= ChangeFileExt(ParamStr(0),'.ini');
+  // iniファイルを実行ファイルと同じ場所に配置するとき(書き込みできない場合がある)
+  //result:= ChangeFileExt(ParamStr(0),'.ini');
 
+  // iniファイルを C:\Users\<user-name>\AppData\Local\<application-title>\
+  s:=GetAppConfigDir(False);
+  result:= s+ ExtractFileName(ChangeFileExt(ParamStr(0),'.ini'));
+  Debug(result);
 end;
 
 
@@ -746,11 +752,11 @@ begin
 
         MemStream.Position:=0;
         if imgTags.ImageType='JPEG' then
-          ConvertJpeg(MemStream,FBmp)
+          ConvertStreamJpegToBitmap(MemStream,FBmp)
         else if imgTags.ImageType='RGB565' then
-          ConvertRGB565(MemStream,FBmp)
+          ConvertStreamRGB565ToBitmap(MemStream,FBmp)
         else if imgTags.ImageType='GRAY' then
-          ConvertGray(MemStream,FBmp);
+          ConvertStreamGrayToBitmap(MemStream,FBmp);
 
         ImagePaint.Repaint;
         Debug('Draw Success');
@@ -803,7 +809,7 @@ begin
       if imgTags.ImageType='PGM' then
       begin
         // PGMファイルをBMPファイルに変換
-        ConvertGrayPgmToBmp(fn);
+        CreateBitmapFileFromGrayPgm(fn);
       end;
 
     finally
