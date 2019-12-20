@@ -14,23 +14,6 @@ uses
 
 {$R *.res}
 
-(* TEST
-var
-  dir,s:string;
-  sl:TStringList;
-begin
-  // Tests.
-  dir:= 'C:\Users\sae\Pictures\spresense\Image\Piyo';
-  sl:=TStringList.Create;
-  FindAllFiles(sl,dir,'*.PGM',false);
-
-  for s in sl do
-    ConvertGrayPgmToBmp(s);
-
-  sl.Free;
-end.
-*)
-
 begin
 
   RequireDerivedFormResource := True;
