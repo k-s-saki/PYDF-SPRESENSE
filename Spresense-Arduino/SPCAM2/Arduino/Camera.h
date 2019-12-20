@@ -385,7 +385,7 @@ public:
    */
   CamErr convertPixFormat(CAM_IMAGE_PIX_FMT to_fmt /**< [en] Pixcel format which is convert to. <BR> [ja] 変換するピクセルフォーマット */);
 
-  /*
+  /**
    * @brief Resize Image with HW 2D accelerator.
    * @details [en] Resize the image with 2D accelerator HW in CXD5602.
    *               Internaly, new image buffer is created, and the resized image is in it.

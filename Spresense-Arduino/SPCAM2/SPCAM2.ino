@@ -20,7 +20,7 @@ const String EOL="\r\n"; //"\n";
 /* カメラモード */
 enum CameraMode {
   cmNone,
-  cmCBPreview,           // Camera Callback (YUV)
+  cmCBPreview,        // Camera Callback (videoModeでフォーマットが決定される）
   cmJpegPreview,         // Jpeg Stream  
   cmJpegFile,            // Shot JpegFile
   cmPgmFile              // Shot PgmFile 
@@ -49,8 +49,19 @@ bool isTransfer = false;
 bool beingCaptured = false;
 bool isDNNReady = false;
 
+
 /* カメラモード */
 CameraMode cameraMode = cmNone;
+
+/* ビデオモード */
+CAM_IMAGE_PIX_FMT videoFormat= CAM_IMAGE_PIX_FMT_YUV422;
+/* Callbackに使われるモードと思われるが、YUV422しかテストしてない 
+CAM_IMAGE_PIX_FMT_RGB565   RGB565 format
+CAM_IMAGE_PIX_FMT_YUV422  YUV422 packed.
+CAM_IMAGE_PIX_FMT_JPG   JPEG format
+CAM_IMAGE_PIX_FMT_GRAY  Gray-scale
+CAM_IMAGE_PIX_FMT_NONE  No defined format
+*/
 
 //For Debug
 int  stopCounter=0;
@@ -348,72 +359,74 @@ void CamCB(CamImage img)
   //if (nframes % 4 !=0)
   //  return;
 
-
-  float * pInputData;
-  unsigned int i;
-
-  // ge.h / cpp はSONYさん製作のラスターオペレーション（画像の便利関数）関数がはいってました。（ジャンケンのサンプルから取得して一部改変）
-  // 決め打ちで228, 228 YUV から 28x28のメモリを作っているようですが、ビット操作ではなく、ハードウエアでやっているような？
-  // GE.shrink(img, img_mem);
-
-  CamImage clip_image;
-  //(320x240) -Clip-> (224x224)-Resize-> (28x28)  // ByHW(=By Hardware accelarated function) 
-  CamErr err = img.clipAndResizeImageByHW(clip_image,48,8,271,231,28,28);
-  if (err) {
-    Debug("Error : clipAndResizeImageByHW().");
-    return;
-  }
-
-  if (!clip_image.isAvailable())
-    return;
-
-  // 入力変数　dnn_in は1次元：要素数28x28で初期化されています。そこに画素データをセットします。
-  pInputData = dnn_in.data();
-  uint16_t* buf = (uint16_t*)clip_image.getImgBuff();
-  for (i = 0; i < 28 * 28; i++)
-  {
-    pInputData[i] = (float)(*buf);
-    buf++;
-  }
-
-  // DNNRTにセットして・・
-  dnnrt.inputVariable(dnn_in, 0);
-  // 推論する
-  dnnrt.forward();
-
-  // 結果の取得
-  DNNVariable dnn_out = dnnrt.outputVariable(0);
-  // dnn_outは配列になっているので、配列のサイズを取得しておく
-  int out_size = dnn_out.size();
-
-  String s="DNN Output:";
-  for (int i=0; i< out_size; i++){
-    char tmp[30];
-    sprintf(tmp,"[%d]=%.4f",i,dnn_out[i]);
-    if (i!=0){
-      s=s+",";
+  if (videoFormat== CAM_IMAGE_PIX_FMT_YUV422 ){
+    float * pInputData;
+    unsigned int i;
+  
+    // ge.h / cpp はSONYさん製作のラスターオペレーション（画像の便利関数）関数がはいってました。（ジャンケンのサンプルから取得して一部改変）
+    // 決め打ちで228, 228 YUV から 28x28のメモリを作っているようですが、ビット操作ではなく、ハードウエアでやっているような？
+    // GE.shrink(img, img_mem);
+  
+    CamImage clip_image;
+    //(320x240) -Clip-> (224x224)-Resize-> (28x28)  // ByHW(=By Hardware accelarated function) 
+    CamErr err = img.clipAndResizeImageByHW(clip_image,48,8,271,231,28,28);
+    if (err) {
+      Debug("Error : clipAndResizeImageByHW().");
+      return;
     }
-    s = s + String(tmp);
+  
+    if (!clip_image.isAvailable())
+      return;
+  
+    // 入力変数　dnn_in は1次元：要素数28x28で初期化されています。そこに画素データをセットします。
+    pInputData = dnn_in.data();
+    uint16_t* buf = (uint16_t*)clip_image.getImgBuff();
+    for (i = 0; i < 28 * 28; i++)
+    {
+      pInputData[i] = (float)(*buf);
+      buf++;
+    }
+  
+    // DNNRTにセットして・・
+    dnnrt.inputVariable(dnn_in, 0);
+    // 推論する
+    dnnrt.forward();
+  
+    // 結果の取得
+    DNNVariable dnn_out = dnnrt.outputVariable(0);
+    // dnn_outは配列になっているので、配列のサイズを取得しておく
+    int out_size = dnn_out.size();
+  
+    String s="DNN Output:";
+    for (int i=0; i< out_size; i++){
+      char tmp[30];
+      sprintf(tmp,"[%d]=%.4f",i,dnn_out[i]);
+      if (i!=0){
+        s=s+",";
+      }
+      s = s + String(tmp);
+    }
+    Debug(s);
+  
+    //判定イメージの送信
+    String img_tag;
+    //イメージを変換(RGB565)
+    //img.convertPixFormat(CAM_IMAGE_PIX_FMT_RGB565);
+    //img_tag="RGB565";
+    img.convertPixFormat(CAM_IMAGE_PIX_FMT_GRAY);
+    img_tag="GRAY";
+  
+    uint8_t* send_buf = img.getImgBuff();
+    int send_bufSize = img.getImgSize();
+    SendImageProperty("ImageStream", 0, img_tag, send_bufSize);  
+  
+    //データ送信  
+    sendBinaryData(send_buf,send_bufSize);
+    Debug("DNN Image File transfer end.");   
+  
+  
+    
   }
-  Debug(s);
-
-  //判定イメージの送信
-  String img_tag;
-  //イメージを変換(RGB565)
-  //img.convertPixFormat(CAM_IMAGE_PIX_FMT_RGB565);
-  //img_tag="RGB565";
-  img.convertPixFormat(CAM_IMAGE_PIX_FMT_GRAY);
-  img_tag="GRAY";
-
-  uint8_t* send_buf = img.getImgBuff();
-  int send_bufSize = img.getImgSize();
-  SendImageProperty("ImageStream", 0, img_tag, send_bufSize);  
-
-  //データ送信  
-  sendBinaryData(send_buf,send_bufSize);
-  Debug("DNN Image File transfer end.");   
-  
-  
 }
 void SetCameraMode(CameraMode cm)
 {
@@ -432,7 +445,17 @@ void SetCameraMode(CameraMode cm)
 
   if (cm==cmCBPreview){
     Debug("Preview:CameraCallback");
-    //カメラコールバックではフォーマットがYUVに固定されるので何もしない
+  
+    if (videoFormat==CAM_IMAGE_PIX_FMT_YUV422){
+      
+      //カメラコールバックではフォーマットがYUVに固定されるので何もしない
+      
+    }
+    else if (videoFormat==CAM_IMAGE_PIX_FMT_JPG){
+
+      // reserved.
+      
+    };
     cameraMode= cm;   
   }
   if (cm==cmJpegPreview){
@@ -710,7 +733,14 @@ void setup()
   digitalWrite(LED_CAMERA, HIGH);
 
   //カメラを利用可能に
-  theCamera.begin();
+  theCamera.begin(
+    1,                // Buffer Num (int)
+    CAM_VIDEO_FPS_30, // FPS (CAM_VIDEO_FPS)
+    CAM_IMGSIZE_QVGA_H, // video_width (int)
+    CAM_IMGSIZE_QVGA_V, // video_height (int)
+    videoFormat  // video format(設定用の定数)
+  );
+
   theCamera.setAutoWhiteBalanceMode(CAM_WHITE_BALANCE_DAYLIGHT);
 
   // 全LED点灯
