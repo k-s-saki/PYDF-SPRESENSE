@@ -25,8 +25,10 @@ function ConvertStreamJpegToBitmap(ms:TMemoryStream; bmp: Graphics.TBitmap):bool
 
 
 function GetStringProperty(s:string):string;
+(* 文字列'a=b' の 　bの部分を文字列で返す *)
 
 function GetIntegerProperty(s:string):integer;
+(* 文字列'a=b' の 　bの部分を数値で返す *)
 
 
 implementation

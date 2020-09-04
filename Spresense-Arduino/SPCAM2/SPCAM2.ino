@@ -54,7 +54,10 @@ bool isDNNReady = false;
 CameraMode cameraMode = cmNone;
 
 /* ビデオモード */
-CAM_IMAGE_PIX_FMT videoFormat= CAM_IMAGE_PIX_FMT_YUV422;
+// Ver1.5から CAM_IMAGE_PIX_FMT_JPG がサポートされた。
+CAM_IMAGE_PIX_FMT videoFormat= CAM_IMAGE_PIX_FMT_JPG;
+//CAM_IMAGE_PIX_FMT videoFormat= CAM_IMAGE_PIX_FMT_YUV422;
+
 /* Callbackに使われるモードと思われるが、YUV422しかテストしてない 
 CAM_IMAGE_PIX_FMT_RGB565   RGB565 format
 CAM_IMAGE_PIX_FMT_YUV422  YUV422 packed.

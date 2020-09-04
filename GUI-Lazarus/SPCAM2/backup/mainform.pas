@@ -193,7 +193,7 @@ begin
   // iniファイルを実行ファイルと同じ場所に配置するとき(書き込みできない場合がある)
   //result:= ChangeFileExt(ParamStr(0),'.ini');
 
-  // iniファイルを C:\Users\user\AppData\Local\exe_name\
+  // iniファイルを C:\Users\<user-name>\AppData\Local\<application-title>\
   s:=GetAppConfigDir(False);
   result:= s+ ExtractFileName(ChangeFileExt(ParamStr(0),'.ini'));
   Debug(result);
